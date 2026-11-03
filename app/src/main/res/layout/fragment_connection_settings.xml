@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- PERFORMANCE -->
+    <LinearLayout
+        android:id="@+id/performanceSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="2dp"
+        android:orientation="vertical">
+
+        <!-- TITLE + MODE INFO -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="22dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PERFORMANCE"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:text=">"
+                android:textSize="16sp"
+                android:textColor="#2196F3"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/tvPerformanceInfo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="superfast + logical switching + backup connection"
+                android:textSize="10sp"
+                android:textColor="#2196F3"
+                android:singleLine="true"
+                android:ellipsize="none"
+                android:includeFontPadding="false" />
+
+        </LinearLayout>
+
+
+        <!-- PERFORMANCE BUTTONS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <!-- LOW -->
+            <FrameLayout
+                android:id="@+id/performanceLow"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/bg_performance_normal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvLow"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="LOW"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#222222"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/infoLow"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="10dp"
+                    android:gravity="center"
+                    android:text="ⓘ"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </FrameLayout>
+
+
+            <!-- BALANCED -->
+            <FrameLayout
+                android:id="@+id/performanceBalanced"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/bg_performance_normal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvBalanced"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="BALANCED"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#222222"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/infoBalanced"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="10dp"
+                    android:gravity="center"
+                    android:text="ⓘ"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </FrameLayout>
+
+
+            <!-- HIGH -->
+            <FrameLayout
+                android:id="@+id/performanceHigh"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:background="@drawable/bg_performance_selected"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvHigh"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="HIGH"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#222222"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/infoHigh"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="10dp"
+                    android:gravity="center"
+                    android:text="ⓘ"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <!-- STAR / MESH -->
+    <LinearLayout
+        android:id="@+id/connectionModeSection"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="3dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <!-- STAR / DIRECT -->
+        <FrameLayout
+            android:id="@+id/starDirectConnection"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/bg_performance_selected"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="STAR/DIRECT&#10;CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+        </FrameLayout>
+
+
+        <!-- MESH -->
+        <FrameLayout
+            android:id="@+id/meshConnection"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="MESH&#10;CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+    <!-- CONNECTION TYPES -->
+    <LinearLayout
+        android:id="@+id/connectionTypesSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="3dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:gravity="center_vertical"
+            android:text="CONNECTION TYPES"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:includeFontPadding="false" />
+
+
+
+        <!-- LAN / ROUTER -->
+        <FrameLayout
+            android:id="@+id/connectionLan"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginBottom="3dp"
+            android:background="@drawable/bg_performance_selected"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tvConnectionLan"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="38dp"
+                android:text="LAN/ROUTER CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/infoConnectionLan"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="ⓘ"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+
+
+        <!-- HOTSPOT + WIFI -->
+        <FrameLayout
+            android:id="@+id/connectionHotspot"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginBottom="3dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="38dp"
+                android:text="HOTSPOT + WIFI CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/infoConnectionHotspot"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="ⓘ"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+
+
+        <!-- WIFI P2P -->
+        <FrameLayout
+            android:id="@+id/connectionWifiP2p"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginBottom="3dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="38dp"
+                android:text="WIFI P2P CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/infoConnectionWifiP2p"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="ⓘ"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+
+
+        <!-- CLASSIC BLUETOOTH -->
+        <FrameLayout
+            android:id="@+id/connectionBluetooth"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="38dp"
+                android:text="CLASSIC BLUETOOTH CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/infoConnectionBluetooth"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="ⓘ"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+
+
+        <!-- NAN -->
+        <FrameLayout
+            android:id="@+id/connectionNan"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="38dp"
+                android:text="NAN CONNECTION"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/infoConnectionNan"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="ⓘ"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- ================================================== -->
+    <!-- COMMON NAME + SYNC NAME -->
+    <!-- ================================================== -->
+
+    <include
+        android:id="@+id/commonNameSyncSection"
+        layout="@layout/connection_common"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="4dp" />
+
+    <!-- ================================================== -->
+    <!-- LAN DETAILS -->
+    <!-- ================================================== -->
+
+    <FrameLayout
+        android:id="@+id/lanDetailsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="4dp">
+
+        <include
+            layout="@layout/connection_lan_detail" />
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/hotspotDetailsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:visibility="gone">
+
+        <include
+            layout="@layout/connection_hotspot_detail" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/scanBoxContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:visibility="gone">
+
+        <include
+            layout="@layout/connection_scan_box" />
+
+    </FrameLayout>
+
+</LinearLayout>

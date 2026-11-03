@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <!-- OWNER -->
+        <FrameLayout
+            android:id="@+id/hotspotOwner"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/bg_performance_selected"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="OWNER"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#222222"/>
+        </FrameLayout>
+
+        <!-- CLIENT -->
+        <FrameLayout
+            android:id="@+id/hotspotClient"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="CLIENT"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#222222"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

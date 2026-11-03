@@ -1,0 +1,103 @@
+<!-- 
+  view_attachment_sheet.xml — REPLACEMENT (WhatsApp-style panel)
+  AttachmentPanelView ke andar inflate hota hai.
+
+  Layers (neeche se upar):
+    scrimView        — chat dim; COLLAPSED mein GONE (touches pass-through rehte hain)
+    optionsContainer — STATIC: pill + EXISTING view_attach_panel.xml (include) — options kbhi move nahi hote
+    gallerySheet     — translationY se slide: [handle+header][full grid RecyclerView]
+    selectionBar     — selection ≥ 1: [thumb+✏️][😊 caption][➤ + count]
+    albumSheet       — Recents ▾ album picker + Files box (drag-close)
+    discardPopup     — RULE 3: collapse hone ke BAAD upar aata hai (Cancel/Discard)
+    editorOverlay    — ✏️ editor preview + saare tool options (abhi placeholders)
+ -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent">
+<!--  Chat dim (sirf tray ke UPAR ka area; height = code mein bottomMargin se)  -->
+<View android:id="@+id/scrimView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="320dp" android:background="#000000" android:visibility="gone"/>
+<!--  ============ LAYER: OPTIONS (static; EXISTING view_attach_panel.xml include) ============  -->
+<LinearLayout android:id="@+id/optionsContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:orientation="vertical" android:background="#FFFFFF" android:alpha="0">
+<View android:id="@+id/optPill" android:layout_width="36dp" android:layout_height="4dp" android:layout_gravity="center_horizontal" android:layout_marginTop="8dp" android:background="@drawable/bg_handle_pill"/>
+<include layout="@layout/view_attach_panel"/>
+</LinearLayout>
+<!--  ============ LAYER: GALLERY SHEET ============  -->
+<LinearLayout android:id="@+id/gallerySheet" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+<!--  handle + header (COLLAPSED mein invisible + untouchable)  -->
+<LinearLayout android:id="@+id/headerSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+<View android:id="@+id/handlePill" android:layout_width="36dp" android:layout_height="4dp" android:layout_gravity="center_horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_handle_pill"/>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="48dp">
+<TextView android:id="@+id/btnCloseGallery" android:layout_width="48dp" android:layout_height="match_parent" android:layout_alignParentStart="true" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:gravity="center" android:text="✕" android:textColor="#FFFFFF" android:textSize="17sp"/>
+<TextView android:id="@+id/btnRecents" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_centerInParent="true" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:text="Recents ▾" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold"/>
+<TextView android:id="@+id/btnHd" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_alignParentEnd="true" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:gravity="center" android:paddingStart="14dp" android:paddingEnd="14dp" android:text="HD" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="6dp"/>
+</RelativeLayout>
+</LinearLayout>
+<androidx.recyclerview.widget.RecyclerView android:id="@+id/galleryRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:overScrollMode="never"/>
+</LinearLayout>
+<!--  ============ LAYER: SELECTION BAR ([thumb+✏️][😊 caption][➤ count]) ============  -->
+<LinearLayout android:id="@+id/selectionBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:background="#11181C" android:gravity="center_vertical" android:minHeight="64dp" android:orientation="horizontal" android:paddingStart="12dp" android:paddingTop="8dp" android:paddingEnd="12dp" android:paddingBottom="8dp" android:visibility="gone">
+<FrameLayout android:layout_width="44dp" android:layout_height="44dp">
+<ImageView android:id="@+id/barThumb" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:background="#2A3942"/>
+<TextView android:layout_width="match_parent" android:layout_height="match_parent" android:background="#55000000" android:gravity="center" android:text="✏️" android:textSize="15sp"/>
+</FrameLayout>
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="10dp" android:layout_weight="1" android:background="@drawable/bg_caption_field" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="14dp">
+<TextView android:id="@+id/capEmoji" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😊" android:textSize="17sp"/>
+<EditText android:id="@+id/etCaption" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Add a caption..." android:imeOptions="flagNoExtractUi" android:importantForAutofill="no" android:inputType="textCapSentences|textMultiLine" android:maxLines="3" android:minHeight="36dp" android:paddingStart="4dp" android:textColor="#FFFFFF" android:textColorHint="#99FFFFFF" android:textSize="14sp"/>
+</LinearLayout>
+<FrameLayout android:id="@+id/btnSendImages" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_send_circle" android:clickable="true" android:focusable="true">
+<TextView android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="➤" android:textColor="#FFFFFF" android:textSize="17sp"/>
+<TextView android:id="@+id/tvSendCount" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="top|end" android:layout_marginTop="-5dp" android:layout_marginEnd="-5dp" android:background="@drawable/bg_badge_round" android:gravity="center" android:text="0" android:textColor="#00A884" android:textSize="11sp" android:textStyle="bold"/>
+</FrameLayout>
+</LinearLayout>
+<!--  ============ LAYER: DISCARD POPUP (collapse hone ke BAAD upar aata hai) ============  -->
+<LinearLayout android:id="@+id/discardPopup" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:layout_marginStart="16dp" android:layout_marginEnd="16dp" android:layout_marginBottom="110dp" android:background="@drawable/bg_discard_card" android:gravity="center_horizontal" android:orientation="vertical" android:paddingStart="18dp" android:paddingTop="16dp" android:paddingEnd="18dp" android:paddingBottom="6dp" android:visibility="gone">
+<LinearLayout android:id="@+id/dpThumbs" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Discard selection?" android:textColor="#E9EDEF" android:textSize="15sp" android:textStyle="bold"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+<TextView android:id="@+id/btnDpCancel" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:gravity="center" android:text="Cancel" android:textColor="#25D366" android:textSize="15sp" android:textStyle="bold" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/btnDpDiscard" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:gravity="center" android:text="Discard" android:textColor="#FF5252" android:textSize="15sp" android:textStyle="bold" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+</LinearLayout>
+<!--  ============ LAYER: ALBUM PICKER (Recents ▾) + Files box ============  -->
+<LinearLayout android:id="@+id/albumSheet" android:layout_width="match_parent" android:layout_height="450dp" android:layout_gravity="bottom" android:background="@drawable/bg_discard_card" android:orientation="vertical" android:visibility="gone">
+<FrameLayout android:id="@+id/albumDragZone" android:layout_width="match_parent" android:layout_height="28dp">
+<View android:layout_width="36dp" android:layout_height="4dp" android:layout_gravity="center" android:background="@drawable/bg_handle_pill"/>
+</FrameLayout>
+<androidx.recyclerview.widget.RecyclerView android:id="@+id/albumRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:overScrollMode="never"/>
+<LinearLayout android:id="@+id/fileBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:layout_marginTop="6dp" android:layout_marginEnd="14dp" android:layout_marginBottom="14dp" android:background="#182229" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="14dp">
+<TextView android:layout_width="42dp" android:layout_height="42dp" android:background="#2B5278" android:gravity="center" android:text="📁" android:textSize="19sp"/>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Files" android:textColor="#E9EDEF" android:textSize="15sp"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Browse documents and other files" android:textColor="#8696A0" android:textSize="12sp"/>
+</LinearLayout>
+</LinearLayout>
+</LinearLayout>
+<!--  ============ LAYER: EDITOR (preview + saare tool options) ============  -->
+<LinearLayout android:id="@+id/editorOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#000000" android:clickable="true" android:focusable="true" android:orientation="vertical" android:visibility="gone">
+<LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
+<TextView android:id="@+id/edClose" android:layout_width="44dp" android:layout_height="44dp" android:clickable="true" android:focusable="true" android:gravity="center" android:text="✕" android:textColor="#FFFFFF" android:textSize="18sp"/>
+<HorizontalScrollView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:scrollbars="none">
+<LinearLayout android:id="@+id/edStrip" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="4dp"/>
+</HorizontalScrollView>
+<TextView android:id="@+id/edHd" android:layout_width="wrap_content" android:layout_height="34dp" android:clickable="true" android:focusable="true" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp" android:text="HD" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold"/>
+</LinearLayout>
+<ImageView android:id="@+id/edImage" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:scaleType="fitCenter"/>
+<!--  Tool options — abhi placeholders (working phase-2), jaisa decide hua tha  -->
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:orientation="horizontal" android:paddingTop="8dp" android:paddingBottom="8dp">
+<TextView android:id="@+id/toolUndo" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="↶" android:textColor="#FFFFFF" android:textSize="18sp" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/toolRotate" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="🔄" android:textColor="#FFFFFF" android:textSize="16sp" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/toolCrop" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="▢" android:textColor="#FFFFFF" android:textSize="18sp" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/toolSticker" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="😊" android:textSize="17sp" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/toolText" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="T" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:clickable="true" android:focusable="true"/>
+<TextView android:id="@+id/toolDraw" android:layout_width="46dp" android:layout_height="46dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_tool_circle" android:gravity="center" android:text="🖊" android:textSize="16sp" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingBottom="10dp">
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_caption_field" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="14dp">
+<TextView android:id="@+id/edCapEmoji" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😊" android:textSize="17sp"/>
+<EditText android:id="@+id/edCaption" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Add a caption..." android:imeOptions="flagNoExtractUi" android:importantForAutofill="no" android:inputType="textCapSentences|textMultiLine" android:maxLines="3" android:minHeight="36dp" android:paddingStart="4dp" android:textColor="#FFFFFF" android:textColorHint="#99FFFFFF" android:textSize="14sp"/>
+</LinearLayout>
+<FrameLayout android:id="@+id/edSend" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="10dp" android:background="@drawable/bg_send_circle" android:clickable="true" android:focusable="true">
+<TextView android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="➤" android:textColor="#FFFFFF" android:textSize="17sp"/>
+<TextView android:id="@+id/edCount" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="top|end" android:layout_marginTop="-5dp" android:layout_marginEnd="-5dp" android:background="@drawable/bg_badge_round" android:gravity="center" android:text="0" android:textColor="#00A884" android:textSize="11sp" android:textStyle="bold"/>
+</FrameLayout>
+</LinearLayout>
+</LinearLayout>
+</merge>

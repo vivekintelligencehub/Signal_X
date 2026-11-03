@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sessionPanel"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:visibility="gone"
+    android:background="#FFFFFF"
+    android:paddingTop="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout android:id="@+id/cellSessionLock" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🔒" android:textSize="26sp" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Session Lock" android:textSize="10sp" android:textColor="#555555" android:gravity="center" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cellVaultLock" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🗄️" android:textSize="26sp" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Vault Lock" android:textSize="10sp" android:textColor="#555555" android:gravity="center" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cellDisappearMode" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⏳" android:textSize="26sp" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Disappear Mode" android:textSize="10sp" android:textColor="#555555" android:gravity="center" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cellDisappearTimer" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⏱️" android:textSize="26sp" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Disappear Timer" android:textSize="10sp" android:textColor="#555555" android:gravity="center" android:includeFontPadding="false" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="22dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout android:id="@+id/cellSettingsChat" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⚙️" android:textSize="26sp" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Settings" android:textSize="10sp" android:textColor="#555555" android:gravity="center" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <View android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+        <View android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+        <View android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+
+    </LinearLayout>
+
+</LinearLayout>

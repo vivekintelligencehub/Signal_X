@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+
+    <!-- =====================================================
+         EXISTING CHAT UI
+         ===================================================== -->
+
+    <LinearLayout
+        android:id="@+id/chatMainContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#FFFFFF">
+
+
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="6dp">
+
+            <TextView
+                android:id="@+id/btnBackChat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="←"
+                android:textSize="20sp"
+                android:textColor="#222222"
+                android:clickable="true"
+                android:focusable="true" />
+
+
+            <TextView
+                android:id="@+id/tvChatAvatarLetter"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_avatar_circle"
+                android:gravity="center"
+                android:text="A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:includeFontPadding="false" />
+
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvChatHeaderName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Name"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#222222"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false" />
+
+
+                <TextView
+                    android:id="@+id/tvChatHeaderStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="Online"
+                    android:textSize="11sp"
+                    android:textColor="#777777"
+                    android:singleLine="true"
+                    android:includeFontPadding="false" />
+
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/btnVideoCall"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="📹"
+                android:textSize="18sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+
+            <TextView
+                android:id="@+id/btnVoiceCall"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="📞"
+                android:textSize="18sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+
+            <TextView
+                android:id="@+id/btnChatOptionsMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="⋮"
+                android:textSize="20sp"
+                android:textColor="#222222"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+
+        <!-- =================================================
+             HEADER DIVIDER
+             ================================================= -->
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0" />
+
+
+        <!-- =================================================
+             CLOSE ALL SESSIONS
+             ================================================= -->
+
+        <TextView
+            android:id="@+id/closeAllSessionsBanner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="🔒  Close All Sessions"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="#F44336"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            android:includeFontPadding="false" />
+
+
+        <!-- =================================================
+             ACTIVE SESSION
+             ================================================= -->
+
+        <TextView
+            android:id="@+id/sessionActiveBanner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="🔓  Session Active — Tap to Lock"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="#2196F3"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            android:includeFontPadding="false" />
+
+
+        <!-- =================================================
+             HIGHLIGHT BANNER
+             ================================================= -->
+
+        <TextView
+            android:id="@+id/highlightBanner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="🔦  Highlighting — Tap to Turn Off"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:background="#FFC107"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            android:includeFontPadding="false" />
+
+
+        <!-- =================================================
+             MESSAGES
+             ================================================= -->
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMessages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="8dp"
+                android:clipToPadding="false"
+                android:background="#FFFFFF" />
+
+
+            <!-- Highlight navigation -->
+
+            <LinearLayout
+                android:id="@+id/highlightNavContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+
+                <TextView
+                    android:id="@+id/btnHighlightUp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:gravity="center"
+                    android:text="▲"
+                    android:textSize="14sp"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_round_button_dark"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+
+                <TextView
+                    android:id="@+id/btnHighlightDown"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="▼"
+                    android:textSize="14sp"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_round_button_dark"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+
+        <!-- =================================================
+             INPUT DIVIDER
+             ================================================= -->
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0" />
+
+
+        <!-- =================================================
+             NORMAL CHAT INPUT
+             ================================================= -->
+
+        <LinearLayout
+            android:id="@+id/chatInputBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:background="#FFFFFF">
+
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:background="@drawable/bg_search_bar">
+
+
+                <!-- Emoji -->
+
+                <TextView
+                    android:id="@+id/btnEmoji"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:gravity="center"
+                    android:text="😊"
+                    android:textSize="17sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+
+                <!-- Message input -->
+
+                <com.vanniktech.emoji.EmojiEditText
+                    android:id="@+id/etMessageInput"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Message"
+                    android:textSize="13sp"
+                    android:textColor="#222222"
+                    android:textColorHint="#999999"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:gravity="center_vertical"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:maxLines="4" />
+
+
+                <!-- Paperclip -->
+
+                <TextView
+                    android:id="@+id/btnAttach"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:gravity="center"
+                    android:text="📎"
+                    android:textSize="17sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+
+                <!-- Transfer / Session -->
+
+                <ImageView
+                    android:id="@+id/btnTransfer"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:padding="5dp"
+                    android:src="@drawable/ic_transfer"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Transfer"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+
+                <!-- Camera -->
+
+                <TextView
+                    android:id="@+id/btnCamera"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:gravity="center"
+                    android:text="📷"
+                    android:textSize="17sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+
+            <!-- Send / microphone -->
+
+            <TextView
+                android:id="@+id/btnSendOrMic"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="6dp"
+                android:gravity="center"
+                android:text="🎤"
+                android:textSize="17sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_round_button_green"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+
+        <!-- =================================================
+             EXISTING SESSION PANEL
+             ================================================= -->
+
+        <FrameLayout
+            android:id="@+id/panelContainer"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:visibility="gone">
+
+            <include
+                layout="@layout/view_session_panel" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+    <!-- =====================================================
+         NEW ATTACHMENT / GALLERY PANEL
+         
+         IMPORTANT:
+         This is outside the old chat LinearLayout so it
+         can slide over the chat/input area.
+         ===================================================== -->
+
+    <com.signalX.AttachmentPanelView
+        android:id="@+id/attachmentPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:elevation="30dp" />
+
+</FrameLayout>

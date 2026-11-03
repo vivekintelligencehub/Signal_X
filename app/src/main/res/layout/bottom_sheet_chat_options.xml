@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_top_rounded"
+    android:paddingBottom="10dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:background="#CCCCCC" />
+
+    <LinearLayout
+        android:id="@+id/rowSessionLock"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_icon_circle" android:gravity="center" android:text="🔒" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="14dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Session Lock" android:textSize="13sp" android:textStyle="bold" android:textColor="#222222" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Lock your current session" android:textSize="11sp" android:textColor="#777777" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="18sp" android:textColor="#999999" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rowVaultLock"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_icon_circle" android:gravity="center" android:text="🗄️" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="14dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Vault Lock" android:textSize="13sp" android:textStyle="bold" android:textColor="#222222" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Move this chat to Locked Chats" android:textSize="11sp" android:textColor="#777777" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="18sp" android:textColor="#999999" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rowDisappearMode"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_icon_circle" android:gravity="center" android:text="⏳" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="14dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Disappear Mode" android:textSize="13sp" android:textStyle="bold" android:textColor="#222222" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Messages sent while enabled will disappear when turned off" android:textSize="11sp" android:textColor="#777777" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="18sp" android:textColor="#999999" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rowDisappearTimer"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_icon_circle" android:gravity="center" android:text="⏱️" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="14dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Disappear Timer" android:textSize="13sp" android:textStyle="bold" android:textColor="#222222" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Automatically clear old chats after a set time" android:textSize="11sp" android:textColor="#777777" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="18sp" android:textColor="#999999" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rowSettingsChat"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_icon_circle" android:gravity="center" android:text="⚙️" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="14dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" android:textSize="13sp" android:textStyle="bold" android:textColor="#222222" android:includeFontPadding="false" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Chat and privacy settings" android:textSize="11sp" android:textColor="#777777" android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="18sp" android:textColor="#999999" />
+
+    </LinearLayout>
+
+</LinearLayout>

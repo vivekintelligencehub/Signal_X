@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="34dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="0dp"
+    android:background="@drawable/bg_input_normal">
+
+    <!-- NAME (editable, hint-only jab blank ho) -->
+    <EditText
+        android:id="@+id/etConnectionName"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:hint="Name"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#222222"
+        android:textColorHint="#777777"
+        android:singleLine="true"
+        android:inputType="text"
+        android:background="@android:color/transparent"
+        android:includeFontPadding="false" />
+
+  <!-- SYNC NAME -->
+    <FrameLayout
+        android:layout_width="84dp"
+        android:layout_height="34dp">
+
+        <TextView
+            android:id="@+id/btnSyncName"
+            android:layout_width="80dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="SYNC NAME"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#2196F3"
+            android:background="@drawable/bg_sync_button"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <com.signalX.SyncTraceView
+            android:id="@+id/syncTraceView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+</LinearLayout>

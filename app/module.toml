@@ -1,0 +1,59 @@
+version = 2
+
+[module]
+type = "android-app"
+name = "app"
+languageLevel = "JAVA_8"
+output = "build/classes"
+
+[sourceSets.androidTest]
+scope = "TEST_IMPLEMENTATION"
+java = ["src/androidTest/java", "src/androidTest/kotlin"]
+resources = ["src/androidTest/resources"]
+
+[sourceSets.debug]
+scope = "IMPLEMENTATION"
+aidl = ["src/debug/aidl"]
+assets = ["src/debug/assets"]
+java = ["src/debug/java", "src/debug/kotlin"]
+jniLibs = ["src/debug/jniLibs"]
+res = ["src/debug/res"]
+resources = ["src/debug/resources"]
+
+[sourceSets.main]
+scope = "IMPLEMENTATION"
+aidl = ["src/main/aidl"]
+assets = ["src/main/assets"]
+java = ["src/main/java", "src/main/kotlin"]
+jniLibs = ["src/main/jniLibs"]
+res = ["src/main/res"]
+resources = ["src/main/resources"]
+
+[sourceSets.release]
+scope = "IMPLEMENTATION"
+aidl = ["src/release/aidl"]
+assets = ["src/release/assets"]
+java = ["src/release/java", "src/release/kotlin"]
+jniLibs = ["src/release/jniLibs"]
+res = ["src/release/res"]
+resources = ["src/release/resources"]
+
+[sourceSets.test]
+scope = "TEST_IMPLEMENTATION"
+java = ["src/test/java", "src/test/kotlin"]
+resources = ["src/test/resources"]
+
+[dependencies]
+implementation = ["kotlin-stdlib", "androidx.appcompat:appcompat:1.7.1", "com.google.android.material:material:1.9.0", "androidx.recyclerview:recyclerview:1.3.0", "androidx.core:core-ktx:1.12.0", "com.google.android.material:material:1.11.0", "androidx.constraintlayout:constraintlayout:2.1.4", "androidx.recyclerview:recyclerview:1.3.2", "androidx.viewpager2:viewpager2:1.1.0", "androidx.databinding:viewbinding:8.7.3", "androidx.biometric:biometric:1.1.0", "com.google.android.material:material:1.12.0", "androidx.core:core-ktx:1.13.1", "androidx.lifecycle:lifecycle-process:2.8.4", "androidx.biometric:biometric:1.2.0-alpha05", "com.vanniktech:emoji-ios:0.20.0", "com.vanniktech:emoji-androidx-emoji2:0.20.0", "com.github.bumptech.glide:glide:4.16.0"]
+
+[android]
+namespace = "com.signalx"
+compileSdk = 34
+minSdk = 21
+targetSdk = 34
+manifest = "src/main/AndroidManifest.xml"
+versionCode = 1
+versionName = "1.0"
+isApplication = true
+manifestPlaceholders = []
+buildTypes = [{ name = "debug", debuggable = true, minifyEnabled = false, shrinkResources = false }, { name = "release", debuggable = false, minifyEnabled = false, shrinkResources = false, proguardFiles = ["proguard-android-optimize.txt", "proguard-rules.pro"] }]

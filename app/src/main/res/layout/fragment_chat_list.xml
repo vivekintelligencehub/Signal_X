@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:id="@+id/searchBarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:background="@drawable/bg_search_bar"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍"
+            android:textSize="15sp"
+            android:includeFontPadding="false" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Search"
+            android:textSize="13sp"
+            android:textColor="#999999"
+            android:singleLine="true"
+            android:includeFontPadding="false" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:weightSum="3">
+
+        <FrameLayout
+            android:id="@+id/tabDirect"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/bg_performance_selected"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="💬  DIRECT"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabGroup"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="👥  GROUP"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabUniversal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/bg_performance_normal"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="🌐  UNIVERSAL"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:includeFontPadding="false" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+    <!-- ================================================== -->
+    <!-- FILTER ROW — TouchLockContainer ke andar wrap kiya  -->
+    <!-- gaya hai. paddingTop/paddingBottom yahin se 8dp     -->
+    <!-- extra invisible touch-area de rahe hain.            -->
+    <!-- ================================================== -->
+
+    <com.signalX.TouchLockContainer
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="0dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <HorizontalScrollView
+            android:id="@+id/filterChipsScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/filterChipsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <FrameLayout
+                    android:id="@+id/filterAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_performance_selected"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="ALL"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:textColor="#222222"
+                        android:includeFontPadding="false" />
+
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/filterActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_performance_normal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACTIVE"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#222222"
+                            android:includeFontPadding="false" />
+
+                        <View
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/bg_dot_green" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/filterInactive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_performance_normal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="INACTIVE"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#222222"
+                            android:includeFontPadding="false" />
+
+                        <View
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/bg_dot_red" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <!-- Custom lists Kotlin se yahan insert hongi, hamesha "+" se pehle -->
+
+                <TextView
+                    android:id="@+id/btnAddChat"
+                    android:layout_width="38dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#2196F3"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
+    </com.signalX.TouchLockContainer>
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvChats"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="0dp"
+        android:clipToPadding="false" />
+
+</LinearLayout>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <RadioGroup
+        android:id="@+id/rgPasswordType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/rbUniquePassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Set a unique password for this session"
+            android:textSize="12sp"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/rbCommonPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Use common password for all sessions"
+            android:textSize="12sp" />
+
+    </RadioGroup>
+
+    <LinearLayout
+        android:id="@+id/uniquePasswordFields"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_input_normal">
+
+            <EditText
+                android:id="@+id/etSessionPassword"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Enter unique password"
+                android:textSize="13sp"
+                android:textColor="#222222"
+                android:textColorHint="#999999"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/ivToggleSessionPassword"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:gravity="center"
+                android:text="👁"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_input_normal">
+
+            <EditText
+                android:id="@+id/etSessionPasswordConfirm"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Confirm unique password"
+                android:textSize="13sp"
+                android:textColor="#222222"
+                android:textColorHint="#999999"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/ivToggleSessionPasswordConfirm"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:gravity="center"
+                android:text="👁"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/commonPasswordFields"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="14dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_input_normal">
+
+            <EditText
+                android:id="@+id/etCommonPassword"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Enter common password"
+                android:textSize="13sp"
+                android:textColor="#222222"
+                android:textColorHint="#999999"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/ivToggleCommonPassword"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:gravity="center"
+                android:text="👁"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_input_normal">
+
+            <EditText
+                android:id="@+id/etCommonPasswordConfirm"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Confirm common password"
+                android:textSize="13sp"
+                android:textColor="#222222"
+                android:textColorHint="#999999"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/ivToggleCommonPasswordConfirm"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:gravity="center"
+                android:text="👁"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvCommonPasswordNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Using your saved common password"
+        android:textSize="11sp"
+        android:textColor="#777777"
+        android:visibility="gone"
+        android:includeFontPadding="false" />
+
+    <TextView
+        android:id="@+id/tvSessionPasswordError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textSize="11sp"
+        android:textColor="#F44336"
+        android:visibility="gone"
+        android:includeFontPadding="false" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="14dp">
+
+        <CheckBox
+            android:id="@+id/cbBiometric"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Also allow fingerprint to unlock this session"
+            android:textSize="12sp"
+            android:textColor="#333333"
+            android:includeFontPadding="false" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/btnStartSession"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="18dp"
+        android:gravity="center"
+        android:text="START SESSION"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:background="@drawable/bg_sync_button"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>
