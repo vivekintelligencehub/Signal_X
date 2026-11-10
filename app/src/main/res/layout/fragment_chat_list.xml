@@ -129,7 +129,7 @@
     <!-- extra invisible touch-area de rahe hain.            -->
     <!-- ================================================== -->
 
-    <com.signalX.TouchLockContainer
+    <com.signalx.TouchLockContainer
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
@@ -264,7 +264,7 @@
 
         </HorizontalScrollView>
 
-    </com.signalX.TouchLockContainer>
+    </com.signalx.TouchLockContainer>
 
 
     <androidx.recyclerview.widget.RecyclerView

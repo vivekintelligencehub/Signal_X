@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.text.InputType
 import android.widget.EditText

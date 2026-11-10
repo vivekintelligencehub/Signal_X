@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.view.LayoutInflater
 import android.view.View

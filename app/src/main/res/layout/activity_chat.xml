@@ -415,7 +415,7 @@
          can slide over the chat/input area.
          ===================================================== -->
 
-    <com.signalX.AttachmentPanelView
+    <com.signalx.AttachmentPanelView
         android:id="@+id/attachmentPanel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

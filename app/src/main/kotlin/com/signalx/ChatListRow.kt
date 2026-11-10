@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 sealed class ChatListRow {
     data class MessageRow(val message: Message) : ChatListRow()

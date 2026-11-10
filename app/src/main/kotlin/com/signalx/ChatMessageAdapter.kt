@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import com.bumptech.glide.Glide
 import android.animation.ValueAnimator

@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 data class Message(
     val id: String,

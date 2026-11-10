@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.app.Application
 import com.vanniktech.emoji.EmojiManager

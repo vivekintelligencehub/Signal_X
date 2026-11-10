@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 enum class ChatMenuAction(val label: String, val iconRes: Int) {
 

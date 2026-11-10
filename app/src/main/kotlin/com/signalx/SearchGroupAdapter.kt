@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.graphics.Color
 import android.text.format.DateFormat

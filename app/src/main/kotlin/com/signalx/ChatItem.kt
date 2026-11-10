@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 enum class ChatLocation { NORMAL, ARCHIVED, LOCKED }
 enum class ChatTabType { DIRECT, GROUP }

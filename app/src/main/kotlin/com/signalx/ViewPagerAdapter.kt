@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter

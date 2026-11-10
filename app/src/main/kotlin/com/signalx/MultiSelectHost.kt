@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 interface MultiSelectHost {
     val multiSelectController: MultiSelectHeaderController

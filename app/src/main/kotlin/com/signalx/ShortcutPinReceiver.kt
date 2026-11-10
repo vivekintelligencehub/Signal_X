@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.app.Notification
 import android.app.NotificationChannel

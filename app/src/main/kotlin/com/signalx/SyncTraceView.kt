@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter

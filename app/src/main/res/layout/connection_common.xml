@@ -45,7 +45,7 @@
             android:clickable="true"
             android:focusable="true" />
 
-        <com.signalX.SyncTraceView
+        <com.signalx.SyncTraceView
             android:id="@+id/syncTraceView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

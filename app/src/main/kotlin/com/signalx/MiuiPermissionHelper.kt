@@ -1,4 +1,4 @@
-package com.signalX
+package com.signalx
 
 import android.content.ActivityNotFoundException
 import android.content.Context
