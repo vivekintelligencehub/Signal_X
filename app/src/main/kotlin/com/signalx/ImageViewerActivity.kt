@@ -19,11 +19,19 @@ class ImageViewActivity : AppCompatActivity() {
     companion object {
         private const val EXTRA_URIS = "extra_uris"
         private const val EXTRA_INDEX = "extra_index"
+        private const val EXTRA_CAPTION = "extra_caption"
 
-        fun start(context: Context, uris: List<String>, startIndex: Int) {
+        // caption optional hai — purane calls bina caption ke bhi chalte rahenge
+        fun start(
+            context: Context,
+            uris: List<String>,
+            startIndex: Int,
+            caption: String? = null
+        ) {
             val i = Intent(context, ImageViewActivity::class.java)
             i.putStringArrayListExtra(EXTRA_URIS, ArrayList(uris))
             i.putExtra(EXTRA_INDEX, startIndex)
+            i.putExtra(EXTRA_CAPTION, caption)
             context.startActivity(i)
         }
     }
@@ -34,10 +42,20 @@ class ImageViewActivity : AppCompatActivity() {
 
         val uris = intent.getStringArrayListExtra(EXTRA_URIS) ?: emptyList()
         val startIndex = intent.getIntExtra(EXTRA_INDEX, 0)
+        val caption = intent.getStringExtra(EXTRA_CAPTION)
 
         val vp = findViewById<ViewPager2>(R.id.vpImages)
         val counter = findViewById<TextView>(R.id.tvCounter)
         val btnClose = findViewById<View>(R.id.btnClose)
+        val tvCaption = findViewById<TextView>(R.id.tvCaption)
+
+        // Image ke saath likha hua message (caption) neeche dikhao — khaali ho to chhupa do
+        if (caption.isNullOrBlank()) {
+            tvCaption.visibility = View.GONE
+        } else {
+            tvCaption.visibility = View.VISIBLE
+            tvCaption.text = caption
+        }
 
         vp.adapter = ImagePagerAdapter(uris)
         vp.setCurrentItem(startIndex, false)

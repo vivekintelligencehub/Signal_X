@@ -257,6 +257,10 @@ class ChatMessageAdapter(
         val uriStr = text.removePrefix("IMG::")
         val uris = uriStr.split("||").filter { it.isNotBlank() }
 
+        // Image ke saath bheja gaya message — bubble mein bhi dikhta hai aur
+        // fullscreen viewer mein bhi (viewer ko neeche pass karte hain)
+        val caption = row.message.caption
+
         h.tvText.visibility = View.GONE
 
         if (uris.size == 1) {
@@ -267,17 +271,16 @@ class ChatMessageAdapter(
                 .centerCrop()
                 .into(h.ivSingleImage)
             h.ivSingleImage.setOnClickListener {
-                ImageViewActivity.start(h.itemView.context, uris, 0)
+                ImageViewActivity.start(h.itemView.context, uris, 0, caption)
             }
         } else {
             h.ivSingleImage.visibility = View.GONE
             h.imageGridContainer.visibility = View.VISIBLE
             buildImageGrid(h.imageGridContainer, uris) { index ->
-                ImageViewActivity.start(h.itemView.context, uris, index)
+                ImageViewActivity.start(h.itemView.context, uris, index, caption)
             }
         }
 
-        val caption = row.message.caption
         if (!caption.isNullOrBlank()) {
             h.tvCaption.visibility = View.VISIBLE
             h.tvCaption.text = caption
