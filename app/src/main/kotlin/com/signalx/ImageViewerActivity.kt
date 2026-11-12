@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -44,12 +46,11 @@ class ImageViewActivity : AppCompatActivity() {
         val captionRaw: String = intent.getStringExtra(EXTRA_CAPTION) ?: ""
 
         // Per-image captions: CAP_SEPARATOR se split karo.
-        // Agar separator nahi hai to purana behavior — sab images par same caption.
+        // Separator nahi hai → backward compat: same caption sab images par.
         val captionsList: List<String> = if (captionRaw.contains(AttachmentPanelView.CAP_SEPARATOR)) {
             val parts = captionRaw.split(AttachmentPanelView.CAP_SEPARATOR)
             List(uris.size) { i -> parts.getOrElse(i) { "" } }
         } else {
-            // Backward compat: ek caption → sab images par
             List(uris.size) { captionRaw }
         }
 
@@ -92,7 +93,51 @@ class ImageViewActivity : AppCompatActivity() {
         override fun getItemCount() = uris.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            Glide.with(holder.iv.context).load(Uri.parse(uris[position])).into(holder.iv)
+            // Page badlne par scale reset
+            holder.iv.scaleX = 1f
+            holder.iv.scaleY = 1f
+
+            Glide.with(holder.iv.context)
+                .load(Uri.parse(uris[position]))
+                .into(holder.iv)
+
+            // Pinch-to-zoom
+            var scaleFactor = 1f
+            val scaleDetector = ScaleGestureDetector(
+                holder.iv.context,
+                object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                    override fun onScale(detector: ScaleGestureDetector): Boolean {
+                        scaleFactor *= detector.scaleFactor
+                        scaleFactor = scaleFactor.coerceIn(1f, 5f)
+                        holder.iv.scaleX = scaleFactor
+                        holder.iv.scaleY = scaleFactor
+                        // Zoom mein ho to ViewPager2 ko swipe mat karne do
+                        holder.iv.parent?.requestDisallowInterceptTouchEvent(scaleFactor > 1.05f)
+                        return true
+                    }
+                }
+            )
+
+            holder.iv.setOnTouchListener { _, event ->
+                scaleDetector.onTouchEvent(event)
+                when {
+                    // 2+ ungliyaan → zoom gesture
+                    event.pointerCount >= 2 -> {
+                        holder.iv.parent?.requestDisallowInterceptTouchEvent(true)
+                        true
+                    }
+                    // Zoom hua hua hai → swipe mat karne do
+                    scaleFactor > 1.05f -> {
+                        holder.iv.parent?.requestDisallowInterceptTouchEvent(true)
+                        true
+                    }
+                    // Normal single touch → ViewPager2 ko jaane do (swipe kaam kare)
+                    else -> {
+                        holder.iv.parent?.requestDisallowInterceptTouchEvent(false)
+                        false
+                    }
+                }
+            }
         }
     }
 }

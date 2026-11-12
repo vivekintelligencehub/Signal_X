@@ -24,6 +24,8 @@ class ChatMessageAdapter(
         private const val TYPE_MESSAGE        = 0
         private const val TYPE_BANNER         = 1
         private const val TYPE_REVEALED_BLOCK = 2
+        // Bubble mein kitne characters ke baad "..." lagao
+        private const val BUBBLE_CAPTION_MAX  = 60
     }
 
     private val revealedSessionIdsAlreadyAnimated = mutableSetOf<String>()
@@ -117,8 +119,8 @@ class ChatMessageAdapter(
     }
 
     override fun getItemViewType(position: Int): Int = when (rows[position]) {
-        is ChatListRow.MessageRow       -> TYPE_MESSAGE
-        is ChatListRow.SessionBannerRow -> TYPE_BANNER
+        is ChatListRow.MessageRow         -> TYPE_MESSAGE
+        is ChatListRow.SessionBannerRow   -> TYPE_BANNER
         is ChatListRow.RevealedSessionRow -> TYPE_REVEALED_BLOCK
     }
 
@@ -142,6 +144,20 @@ class ChatMessageAdapter(
         bubbleContainer.background = ContextCompat.getDrawable(bubbleContainer.context, res)
     }
 
+    /**
+     * Bubble mein dikhne wala caption banao:
+     * - Sab non-blank captions comma se jodo: "Vk1, Vk2"
+     * - Zyada lamba ho to 57 chars + "..."
+     * - Sab blank hon to null
+     */
+    private fun buildBubbleCaption(caption: String?): String? {
+        if (caption.isNullOrBlank()) return null
+        val parts = caption.split(AttachmentPanelView.CAP_SEPARATOR).filter { it.isNotBlank() }
+        if (parts.isEmpty()) return null
+        val joined = parts.joinToString(", ")
+        return if (joined.length > BUBBLE_CAPTION_MAX) joined.take(BUBBLE_CAPTION_MAX - 3) + "..." else joined
+    }
+
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = rows[position]) {
 
@@ -151,15 +167,14 @@ class ChatMessageAdapter(
                 applyBubbleHighlight(h.bubbleContainer, row.message.id)
 
                 val text    = row.message.text
-                val caption = row.message.caption   // CAP_SEPARATOR se joined ho sakti hai
+                val caption = row.message.caption
 
                 if (text.startsWith("IMG::")) {
                     val uris = text.removePrefix("IMG::").split("||").filter { it.isNotBlank() }
                     h.tvText.visibility = View.GONE
 
-                    // Bubble mein: pehla non-blank caption dikhao
-                    val bubbleCaption = caption?.split(AttachmentPanelView.CAP_SEPARATOR)
-                        ?.firstOrNull { it.isNotBlank() }
+                    // Sab captions comma se jodkar bubble mein dikhao
+                    val bubbleCaption = buildBubbleCaption(caption)
 
                     if (uris.size == 1) {
                         h.ivSingleImage.visibility      = View.VISIBLE
