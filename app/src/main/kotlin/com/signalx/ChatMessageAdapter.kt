@@ -28,30 +28,22 @@ class ChatMessageAdapter(
 
     private val revealedSessionIdsAlreadyAnimated = mutableSetOf<String>()
     var isBulkReveal: Boolean = false
+    var highlightedMessageIds: Set<String>  = emptySet()
+    var currentHighlightMessageId: String? = null
 
     private fun playExpandAnimation(view: View) {
         view.measure(
-            View.MeasureSpec.makeMeasureSpec(
-                view.width.takeIf { it > 0 } ?: 1000,
-                View.MeasureSpec.EXACTLY
-            ),
+            View.MeasureSpec.makeMeasureSpec(view.width.takeIf { it > 0 } ?: 1000, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.UNSPECIFIED
         )
         val targetHeight = view.measuredHeight
-        view.layoutParams.height = 0
-        view.visibility = View.VISIBLE
-        view.requestLayout()
+        view.layoutParams.height = 0; view.visibility = View.VISIBLE; view.requestLayout()
         val animator = ValueAnimator.ofInt(0, targetHeight)
-        animator.duration = 320L
-        animator.startDelay = 450L
-        animator.addUpdateListener { a ->
-            view.layoutParams.height = a.animatedValue as Int
-            view.requestLayout()
-        }
+        animator.duration = 320L; animator.startDelay = 450L
+        animator.addUpdateListener { a -> view.layoutParams.height = a.animatedValue as Int; view.requestLayout() }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                view.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                view.requestLayout()
+                view.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT; view.requestLayout()
             }
         })
         animator.start()
@@ -70,64 +62,34 @@ class ChatMessageAdapter(
 
         fun makeImage(uri: String, w: Int, h: Int, left: Int, top: Int, idx: Int) {
             val iv = android.widget.ImageView(container.context).apply {
-                layoutParams = android.widget.FrameLayout.LayoutParams(w, h).apply {
-                    leftMargin = left
-                    topMargin  = top
-                }
+                layoutParams = android.widget.FrameLayout.LayoutParams(w, h).apply { leftMargin = left; topMargin = top }
                 scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
             }
             Glide.with(iv).load(android.net.Uri.parse(uri)).centerCrop().into(iv)
-            iv.setOnClickListener { onClick(idx) }
-            container.addView(iv)
+            iv.setOnClickListener { onClick(idx) }; container.addView(iv)
         }
-
         when (uris.size) {
-            2 -> {
-                makeImage(uris[0], halfPx, sizePx, 0, 0, 0)
-                makeImage(uris[1], halfPx, sizePx, halfPx + gapPx, 0, 1)
-            }
-            3 -> {
-                makeImage(uris[0], halfPx, sizePx, 0, 0, 0)
-                makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1)
-                makeImage(uris[2], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 2)
-            }
-            4 -> {
-                makeImage(uris[0], halfPx, halfPx, 0, 0, 0)
-                makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1)
-                makeImage(uris[2], halfPx, halfPx, 0, halfPx + gapPx, 2)
-                makeImage(uris[3], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 3)
-            }
+            2 -> { makeImage(uris[0], halfPx, sizePx, 0, 0, 0); makeImage(uris[1], halfPx, sizePx, halfPx + gapPx, 0, 1) }
+            3 -> { makeImage(uris[0], halfPx, sizePx, 0, 0, 0); makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1); makeImage(uris[2], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 2) }
+            4 -> { makeImage(uris[0], halfPx, halfPx, 0, 0, 0); makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1); makeImage(uris[2], halfPx, halfPx, 0, halfPx + gapPx, 2); makeImage(uris[3], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 3) }
             else -> {
-                makeImage(uris[0], halfPx, halfPx, 0, 0, 0)
-                makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1)
-                makeImage(uris[2], halfPx, halfPx, 0, halfPx + gapPx, 2)
-                makeImage(uris[3], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 3)
+                makeImage(uris[0], halfPx, halfPx, 0, 0, 0); makeImage(uris[1], halfPx, halfPx, halfPx + gapPx, 0, 1)
+                makeImage(uris[2], halfPx, halfPx, 0, halfPx + gapPx, 2); makeImage(uris[3], halfPx, halfPx, halfPx + gapPx, halfPx + gapPx, 3)
                 val overlay = android.widget.TextView(container.context).apply {
-                    layoutParams = android.widget.FrameLayout.LayoutParams(halfPx, halfPx).apply {
-                        leftMargin = halfPx + gapPx
-                        topMargin  = halfPx + gapPx
-                    }
-                    text = "+${uris.size - 3}"
-                    setBackgroundColor(0x99000000.toInt())
-                    setTextColor(0xFFFFFFFF.toInt())
-                    textSize = 20f
-                    gravity  = android.view.Gravity.CENTER
-                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    layoutParams = android.widget.FrameLayout.LayoutParams(halfPx, halfPx).apply { leftMargin = halfPx + gapPx; topMargin = halfPx + gapPx }
+                    text = "+${uris.size - 3}"; setBackgroundColor(0x99000000.toInt()); setTextColor(0xFFFFFFFF.toInt())
+                    textSize = 20f; gravity = android.view.Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD)
                 }
-                overlay.setOnClickListener { onClick(3) }
-                container.addView(overlay)
+                overlay.setOnClickListener { onClick(3) }; container.addView(overlay)
             }
         }
     }
 
     private fun playCollapseAnimation(view: View, session: ChatSession) {
-        val currentHeight = view.height
-        val animator = ValueAnimator.ofInt(currentHeight, 0)
+        val h = view.height
+        val animator = ValueAnimator.ofInt(h, 0)
         animator.duration = 300L
-        animator.addUpdateListener { a ->
-            view.layoutParams.height = a.animatedValue as Int
-            view.requestLayout()
-        }
+        animator.addUpdateListener { a -> view.layoutParams.height = a.animatedValue as Int; view.requestLayout() }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 view.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -138,22 +100,17 @@ class ChatMessageAdapter(
         animator.start()
     }
 
-    var highlightedMessageIds: Set<String>  = emptySet()
-    var currentHighlightMessageId: String? = null
-
     inner class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val bubbleContainer: View                               = itemView.findViewById(R.id.bubbleContainer)
-        val tvText: TextView                                    = itemView.findViewById(R.id.tvMessageText)
-        val tvTime: TextView                                    = itemView.findViewById(R.id.tvMessageTime)
-        val ivSingleImage: ImageView                            = itemView.findViewById(R.id.ivSingleImage)
-        val imageGridContainer: android.widget.FrameLayout     = itemView.findViewById(R.id.imageGridContainer)
-        val tvCaption: TextView                                 = itemView.findViewById(R.id.tvMessageCaption)
+        val bubbleContainer: View                           = itemView.findViewById(R.id.bubbleContainer)
+        val tvText: TextView                                = itemView.findViewById(R.id.tvMessageText)
+        val tvTime: TextView                                = itemView.findViewById(R.id.tvMessageTime)
+        val ivSingleImage: ImageView                        = itemView.findViewById(R.id.ivSingleImage)
+        val imageGridContainer: android.widget.FrameLayout  = itemView.findViewById(R.id.imageGridContainer)
+        val tvCaption: TextView                             = itemView.findViewById(R.id.tvMessageCaption)
     }
-
     inner class BannerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvBanner: TextView = itemView.findViewById(R.id.tvBannerText)
     }
-
     inner class RevealedBlockViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val container: LinearLayout = itemView.findViewById(R.id.revealedMessagesContainer)
         val btnClose: TextView      = itemView.findViewById(R.id.btnCloseRevealedSession)
@@ -166,17 +123,11 @@ class ChatMessageAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
+        val inf = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_MESSAGE -> MessageViewHolder(
-                inflater.inflate(R.layout.item_message_bubble, parent, false)
-            )
-            TYPE_BANNER  -> BannerViewHolder(
-                inflater.inflate(R.layout.item_session_banner, parent, false)
-            )
-            else -> RevealedBlockViewHolder(
-                inflater.inflate(R.layout.item_revealed_session_block, parent, false)
-            )
+            TYPE_MESSAGE -> MessageViewHolder(inf.inflate(R.layout.item_message_bubble, parent, false))
+            TYPE_BANNER  -> BannerViewHolder(inf.inflate(R.layout.item_session_banner,  parent, false))
+            else -> RevealedBlockViewHolder(inf.inflate(R.layout.item_revealed_session_block, parent, false))
         }
     }
 
@@ -184,9 +135,9 @@ class ChatMessageAdapter(
 
     private fun applyBubbleHighlight(bubbleContainer: View, messageId: String) {
         val res = when {
-            messageId == currentHighlightMessageId       -> R.drawable.bg_message_bubble_highlight_current
-            highlightedMessageIds.contains(messageId)   -> R.drawable.bg_message_bubble_highlight
-            else                                        -> R.drawable.bg_message_bubble
+            messageId == currentHighlightMessageId     -> R.drawable.bg_message_bubble_highlight_current
+            highlightedMessageIds.contains(messageId) -> R.drawable.bg_message_bubble_highlight
+            else -> R.drawable.bg_message_bubble
         }
         bubbleContainer.background = ContextCompat.getDrawable(bubbleContainer.context, res)
     }
@@ -200,32 +151,34 @@ class ChatMessageAdapter(
                 applyBubbleHighlight(h.bubbleContainer, row.message.id)
 
                 val text    = row.message.text
-                val caption = row.message.caption
+                val caption = row.message.caption   // CAP_SEPARATOR se joined ho sakti hai
 
                 if (text.startsWith("IMG::")) {
                     val uris = text.removePrefix("IMG::").split("||").filter { it.isNotBlank() }
                     h.tvText.visibility = View.GONE
 
+                    // Bubble mein: pehla non-blank caption dikhao
+                    val bubbleCaption = caption?.split(AttachmentPanelView.CAP_SEPARATOR)
+                        ?.firstOrNull { it.isNotBlank() }
+
                     if (uris.size == 1) {
-                        h.ivSingleImage.visibility    = View.VISIBLE
+                        h.ivSingleImage.visibility      = View.VISIBLE
                         h.imageGridContainer.visibility = View.GONE
                         Glide.with(h.ivSingleImage.context)
-                            .load(android.net.Uri.parse(uris[0]))
-                            .centerCrop().into(h.ivSingleImage)
+                            .load(android.net.Uri.parse(uris[0])).centerCrop().into(h.ivSingleImage)
                         h.ivSingleImage.setOnClickListener {
                             ImageViewActivity.start(h.itemView.context, uris, 0, caption)
                         }
                     } else {
-                        h.ivSingleImage.visibility    = View.GONE
+                        h.ivSingleImage.visibility      = View.GONE
                         h.imageGridContainer.visibility = View.VISIBLE
                         buildImageGrid(h.imageGridContainer, uris) { index ->
                             ImageViewActivity.start(h.itemView.context, uris, index, caption)
                         }
                     }
 
-                    if (!caption.isNullOrBlank()) {
-                        h.tvCaption.visibility = View.VISIBLE
-                        h.tvCaption.text = caption
+                    if (!bubbleCaption.isNullOrBlank()) {
+                        h.tvCaption.visibility = View.VISIBLE; h.tvCaption.text = bubbleCaption
                     } else {
                         h.tvCaption.visibility = View.GONE
                     }
@@ -241,10 +194,8 @@ class ChatMessageAdapter(
 
             is ChatListRow.SessionBannerRow -> {
                 val h = holder as BannerViewHolder
-                val timeText = if (row.session.lockTime != null)
-                    DateFormat.format("dd MMM, hh:mm a", row.session.lockTime)
-                else "Locked"
-                h.tvBanner.text = "\uD83D\uDD12  Session Locked \u2014 $timeText"
+                val t = if (row.session.lockTime != null) DateFormat.format("dd MMM, hh:mm a", row.session.lockTime) else "Locked"
+                h.tvBanner.text = "\uD83D\uDD12  Session Locked \u2014 $t"
                 h.itemView.setOnClickListener { onBannerClick(row.session) }
             }
 
@@ -255,8 +206,7 @@ class ChatMessageAdapter(
                     val bv = LayoutInflater.from(h.container.context)
                         .inflate(R.layout.item_message_bubble, h.container, false)
                     bv.findViewById<TextView>(R.id.tvMessageText).text = message.text
-                    bv.findViewById<TextView>(R.id.tvMessageTime).text =
-                        DateFormat.format("hh:mm a", message.timestamp)
+                    bv.findViewById<TextView>(R.id.tvMessageTime).text = DateFormat.format("hh:mm a", message.timestamp)
                     applyBubbleHighlight(bv.findViewById(R.id.bubbleContainer), message.id)
                     h.container.addView(bv)
                 }
@@ -269,19 +219,13 @@ class ChatMessageAdapter(
         }
     }
 
-    fun updateRows(newRows: List<ChatListRow>) {
-        rows.clear()
-        rows.addAll(newRows)
-        notifyDataSetChanged()
-    }
+    fun updateRows(newRows: List<ChatListRow>) { rows.clear(); rows.addAll(newRows); notifyDataSetChanged() }
 
     fun getPositionForMessageId(messageId: String): Int {
         for (i in rows.indices) {
             when (val row = rows[i]) {
-                is ChatListRow.MessageRow ->
-                    if (row.message.id == messageId) return i
-                is ChatListRow.RevealedSessionRow ->
-                    if (row.messages.any { it.id == messageId }) return i
+                is ChatListRow.MessageRow -> if (row.message.id == messageId) return i
+                is ChatListRow.RevealedSessionRow -> if (row.messages.any { it.id == messageId }) return i
                 else -> {}
             }
         }

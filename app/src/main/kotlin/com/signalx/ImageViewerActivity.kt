@@ -27,11 +27,10 @@ class ImageViewActivity : AppCompatActivity() {
             startIndex: Int,
             caption: String? = null
         ) {
-            val captionText: String = caption ?: ""
             val i = Intent(context, ImageViewActivity::class.java)
             i.putStringArrayListExtra(EXTRA_URIS, ArrayList(uris))
             i.putExtra(EXTRA_INDEX, startIndex)
-            i.putExtra(EXTRA_CAPTION, captionText)
+            i.putExtra(EXTRA_CAPTION, caption ?: "")
             context.startActivity(i)
         }
     }
@@ -42,27 +41,38 @@ class ImageViewActivity : AppCompatActivity() {
 
         val uris: List<String> = intent.getStringArrayListExtra(EXTRA_URIS) ?: emptyList()
         val startIndex: Int    = intent.getIntExtra(EXTRA_INDEX, 0)
-        val caption: String    = intent.getStringExtra(EXTRA_CAPTION) ?: ""
+        val captionRaw: String = intent.getStringExtra(EXTRA_CAPTION) ?: ""
+
+        // Per-image captions: CAP_SEPARATOR se split karo.
+        // Agar separator nahi hai to purana behavior — sab images par same caption.
+        val captionsList: List<String> = if (captionRaw.contains(AttachmentPanelView.CAP_SEPARATOR)) {
+            val parts = captionRaw.split(AttachmentPanelView.CAP_SEPARATOR)
+            List(uris.size) { i -> parts.getOrElse(i) { "" } }
+        } else {
+            // Backward compat: ek caption → sab images par
+            List(uris.size) { captionRaw }
+        }
 
         val vp        = findViewById<ViewPager2>(R.id.vpImages)
         val counter   = findViewById<TextView>(R.id.tvCounter)
         val btnClose  = findViewById<View>(R.id.btnClose)
         val tvCaption = findViewById<TextView>(R.id.tvCaption)
 
-        if (caption.isBlank()) {
-            tvCaption.visibility = View.GONE
-        } else {
-            tvCaption.visibility = View.VISIBLE
-            tvCaption.text = caption
+        fun showCaptionAt(position: Int) {
+            val cap = captionsList.getOrElse(position) { "" }
+            if (cap.isBlank()) tvCaption.visibility = View.GONE
+            else { tvCaption.visibility = View.VISIBLE; tvCaption.text = cap }
         }
 
         vp.adapter = ImagePagerAdapter(uris)
         vp.setCurrentItem(startIndex, false)
         counter.text = "${startIndex + 1} / ${uris.size}"
+        showCaptionAt(startIndex)
 
         vp.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 counter.text = "${position + 1} / ${uris.size}"
+                showCaptionAt(position)
             }
         })
 
@@ -76,18 +86,13 @@ class ImageViewActivity : AppCompatActivity() {
             val iv: ImageView = v.findViewById(R.id.ivFullImage)
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-            val v = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_image_viewer_page, parent, false)
-            return VH(v)
-        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+            VH(LayoutInflater.from(parent.context).inflate(R.layout.item_image_viewer_page, parent, false))
 
         override fun getItemCount() = uris.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            Glide.with(holder.iv.context)
-                .load(Uri.parse(uris[position]))
-                .into(holder.iv)
+            Glide.with(holder.iv.context).load(Uri.parse(uris[position])).into(holder.iv)
         }
     }
 }
