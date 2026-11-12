@@ -95,8 +95,6 @@ class AttachmentPanelView @JvmOverloads constructor(
     private var buckets: List<MediaBucket> = emptyList()
     private var selectedBucketId: String? = null
     private val selection = mutableListOf<RecentImage>()
-
-    // Har selected image ka apna caption (editor se per-image set hota hai)
     private val perImageCaptions = mutableListOf<String>()
 
     private var imagesLoaded = false
@@ -301,9 +299,6 @@ class AttachmentPanelView @JvmOverloads constructor(
 
     private fun toolPhase2(name: String) = toast("$name \u2014 option rakha hai, working phase-2")
 
-    // -----------------------------------------------------------------------
-    // Public API
-    // -----------------------------------------------------------------------
     fun isOpen(): Boolean = panelVisible || pendingOpen
     fun setContentPushView(v: View) { contentPushView = v; pushOriginalBottom = v.paddingBottom }
 
@@ -367,9 +362,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         gridScrollLocked = true; downZone = Zone.OUTSIDE
     }
 
-    // -----------------------------------------------------------------------
-    // Gallery default
-    // -----------------------------------------------------------------------
     private fun resetGalleryToLatest() {
         if (selectedBucketId != null) {
             selectedBucketId = null; btnRecents.text = "Recents \u25be"
@@ -382,9 +374,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (selection.isEmpty() && pendingCollapseFrom == null) resetGalleryToLatest()
     }
 
-    // -----------------------------------------------------------------------
-    // Window / keyboard
-    // -----------------------------------------------------------------------
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         (parent as? View)?.let { p -> watchedParent = p; p.addOnLayoutChangeListener(parentLayoutListener); trackWindowSize(p.width, p.height) }
@@ -408,9 +397,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Sizing
-    // -----------------------------------------------------------------------
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh); panelH = h; trackWindowSize(w, h); applySizing()
     }
@@ -456,9 +442,6 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun topOf(s: State): Float = when (s) { State.FULL -> fullTop; State.MIDDLE -> middleTop; State.COLLAPSED -> collapsedTop }
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
-    // -----------------------------------------------------------------------
-    // Open / close animation
-    // -----------------------------------------------------------------------
     private fun animateOpenClose(opening: Boolean) {
         val myGen = ++animGeneration; animator?.cancel(); animator = null
         openingClosing = true; stateAnimating = false
@@ -486,9 +469,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         anim.start()
     }
 
-    // -----------------------------------------------------------------------
-    // Touch
-    // -----------------------------------------------------------------------
     private fun zoneAt(x: Float, y: Float): Zone {
         if (selectionBar.visibility == VISIBLE && y >= selectionBar.top && y <= selectionBar.bottom) return Zone.BAR
         val st = curTop; val inSheet = y >= st; val inHeader = inSheet && y <= st + headerH
@@ -605,9 +585,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         dbgView?.text = "st=$currentState vis=$panelVisible pend=$pendingOpen\ntop=${curTop.toInt()} H=$panelH full=$fullH\nkb=$kbPx tray=$trayPx opt=$optH hdr=${headerH.toInt()}\noc=$openingClosing sa=$stateAnimating dr=$dragging sel=${selection.size} alb=${isAlbumOpen()}"
     }
 
-    // -----------------------------------------------------------------------
-    // RULE 3
-    // -----------------------------------------------------------------------
     private fun collapseThenAsk(fromState: State) {
         if (selection.isEmpty() || fromState == State.COLLAPSED) { goStateInternal(State.COLLAPSED, null); return }
         pendingCollapseFrom = fromState; goStateInternal(State.COLLAPSED) { showDiscardPopup() }
@@ -631,9 +608,6 @@ class AttachmentPanelView @JvmOverloads constructor(
             .setDuration(180).withEndAction { discardPopup.visibility = GONE }.start()
     }
 
-    // -----------------------------------------------------------------------
-    // Photo tap
-    // -----------------------------------------------------------------------
     private fun onThumbTap(img: RecentImage) {
         if (openingClosing || pendingOpen) return
         if (SystemClock.uptimeMillis() - lastWindowChangeAt < 250) return
@@ -660,9 +634,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (n > 0) { tvSendCount.text = n.toString(); Glide.with(barThumb).load(selection.first().uri).centerCrop().into(barThumb) }
     }
 
-    // -----------------------------------------------------------------------
-    // Per-image caption helpers
-    // -----------------------------------------------------------------------
     private fun saveCurrentEditorCaption() { if (edIndex < perImageCaptions.size) perImageCaptions[edIndex] = edCaption.text.toString() }
     private fun syncCaptionSize() {
         while (perImageCaptions.size < selection.size) perImageCaptions.add("")
@@ -670,7 +641,11 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
 
     // -----------------------------------------------------------------------
-    // Send
+    // Send — caption storage format:
+    //   SINGLE image   : plain text (koi separator nahi)
+    //   DEFAULT system : plain text (koi separator nahi) — sab images par same caption
+    //   PER-IMAGE      : CAP_SEPARATOR se joined — alag-alag captions
+    // Bubble aur Viewer is format se samajhte hain.
     // -----------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
@@ -678,21 +653,22 @@ class AttachmentPanelView @JvmOverloads constructor(
         syncCaptionSize()
 
         val quick = etCaption.text.toString().trim()
-        val finalCaption: String = if (selection.size == 1) {
+        val allBlank = perImageCaptions.all { it.isBlank() }
+
+        val finalCaption: String = when {
             // Single image: perImageCaptions[0] ya etCaption
-            perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
-        } else {
-            val allBlank = perImageCaptions.all { it.isBlank() }
-            when {
-                // *** DEFAULT SYSTEM ***: direct caption → sab images par ek caption
-                allBlank && quick.isNotBlank() ->
-                    List(selection.size) { quick }.joinToString(CAP_SEPARATOR)
-                // Per-image captions set hain (editor se)
-                !allBlank ->
-                    perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
-                // Koi caption nahi
-                else -> ""
-            }
+            selection.size == 1 ->
+                perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
+
+            // DEFAULT SYSTEM: direct caption → ek baar store karo (koi separator nahi)
+            // Bubble mein ek dikhega, Viewer mein sab pages par same dikhega
+            allBlank && quick.isNotBlank() -> quick
+
+            // PER-IMAGE: editor se alag-alag captions set hain → separator ke saath store karo
+            !allBlank -> perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
+
+            // Koi caption nahi
+            else -> ""
         }
 
         hideKeyboardNow()
@@ -700,13 +676,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         clearSelection(); closeEditor(); etCaption.setText(""); hidePanel()
     }
 
-    // -----------------------------------------------------------------------
-    // Editor
-    // -----------------------------------------------------------------------
     private fun openEditor() {
         if (selection.isEmpty()) return
         syncCaptionSize()
-        // Agar sab khaali hain aur etCaption mein kuch hai to sab mein bhar do (default system)
         val quick = etCaption.text.toString().trim()
         if (perImageCaptions.all { it.isBlank() } && quick.isNotBlank()) {
             for (i in perImageCaptions.indices) perImageCaptions[i] = quick
@@ -747,9 +719,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         editorOverlay.animate().alpha(0f).setDuration(140).withEndAction { editorOverlay.visibility = GONE; editorOverlay.alpha = 1f }.start()
     }
 
-    // -----------------------------------------------------------------------
-    // HD
-    // -----------------------------------------------------------------------
     private fun setHd(on: Boolean) {
         btnHd.isSelected = on; btnHd.text = if (on) "HD \u2713" else "HD"
         btnHd.setTextColor(if (on) 0xFF25D366.toInt() else 0xFFFFFFFF.toInt()); syncHdChip()
@@ -759,9 +728,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         edHd.setTextColor(if (on) 0xFF25D366.toInt() else 0xFFFFFFFF.toInt())
     }
 
-    // -----------------------------------------------------------------------
-    // Media loading
-    // -----------------------------------------------------------------------
     private fun hasMediaPermission(): Boolean {
         val perm = if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
                    else android.Manifest.permission.READ_EXTERNAL_STORAGE
@@ -790,9 +756,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         imagesAdapter.update(list.map { RecentImage(it.uri) })
     }
 
-    // -----------------------------------------------------------------------
-    // Album picker
-    // -----------------------------------------------------------------------
     private fun isAlbumOpen(): Boolean = albumSheet.visibility == VISIBLE
     private fun openAlbums() {
         if (!imagesLoaded || stateAnimating || openingClosing || dragging) return
@@ -847,9 +810,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         })
     }
 
-    // -----------------------------------------------------------------------
-    // Cleanup
-    // -----------------------------------------------------------------------
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         watchedParent?.removeOnLayoutChangeListener(parentLayoutListener); watchedParent = null
@@ -875,7 +835,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         private const val KEY_KB_PX  = "kb_px"
         private const val PENDING_OPEN_TIMEOUT_MS = 650L
         private const val DEBUG_OVERLAY = false
-        /** Per-image captions ke beech separator — user kabhi type nahi kar sakta. */
         const val CAP_SEPARATOR = "\u001E"
     }
 

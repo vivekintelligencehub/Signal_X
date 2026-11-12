@@ -144,20 +144,27 @@ class ChatMessageAdapter(
     }
 
     /**
-     * Bubble caption:
-     * - DEFAULT SYSTEM (sab same): sirf EK baar dikhao — "Caption 1"
-     * - PER-IMAGE (alag-alag): comma se jodo — "Cap 1, Cap 3"
-     * - Zyada lamba ho to "..." lagao
+     * Bubble caption logic:
+     *
+     * Caption storage format (AttachmentPanelView se):
+     *   - DEFAULT (direct caption): "Hello"         → koi separator nahi → ek baar dikhao
+     *   - PER-IMAGE (editor se)   : "Cap1\u001ECap2" → separator hai     → comma se sab dikhao
+     *
+     * Isliye distinct() ki zaroorat nahi — format hi alag hai.
      */
     private fun buildBubbleCaption(caption: String?): String? {
         if (caption.isNullOrBlank()) return null
-        val parts = caption.split(AttachmentPanelView.CAP_SEPARATOR).filter { it.isNotBlank() }
-        if (parts.isEmpty()) return null
-        // distinct() se duplicate hata do (default system mein sab same hote hain)
-        val uniqueParts = parts.distinct()
-        val joined = if (uniqueParts.size == 1) uniqueParts[0]
-                     else uniqueParts.joinToString(", ")
-        return if (joined.length > BUBBLE_CAPTION_MAX) joined.take(BUBBLE_CAPTION_MAX - 3) + "..." else joined
+
+        return if (!caption.contains(AttachmentPanelView.CAP_SEPARATOR)) {
+            // DEFAULT SYSTEM: single plain caption — ek baar dikhao
+            caption.trim().ifBlank { null }
+        } else {
+            // PER-IMAGE: har ek caption comma se jodo
+            val parts = caption.split(AttachmentPanelView.CAP_SEPARATOR).filter { it.isNotBlank() }
+            if (parts.isEmpty()) return null
+            val joined = parts.joinToString(", ")
+            if (joined.length > BUBBLE_CAPTION_MAX) joined.take(BUBBLE_CAPTION_MAX - 3) + "..." else joined
+        }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
