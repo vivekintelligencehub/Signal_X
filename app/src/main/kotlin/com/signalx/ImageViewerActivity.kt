@@ -17,20 +17,17 @@ import com.bumptech.glide.Glide
 class ImageViewActivity : AppCompatActivity() {
 
     companion object {
-        private const val EXTRA_URIS = "extra_uris"
-        private const val EXTRA_INDEX = "extra_index"
+        private const val EXTRA_URIS    = "extra_uris"
+        private const val EXTRA_INDEX   = "extra_index"
         private const val EXTRA_CAPTION = "extra_caption"
 
-        // caption optional hai — purane calls bina caption ke bhi chalte rahenge
         fun start(
             context: Context,
             uris: List<String>,
             startIndex: Int,
             caption: String? = null
         ) {
-            // putExtra ko hamesha non-null String do (nullable se overload confuse ho sakta hai)
             val captionText: String = caption ?: ""
-
             val i = Intent(context, ImageViewActivity::class.java)
             i.putStringArrayListExtra(EXTRA_URIS, ArrayList(uris))
             i.putExtra(EXTRA_INDEX, startIndex)
@@ -43,16 +40,15 @@ class ImageViewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_viewer)
 
-        val uris = intent.getStringArrayListExtra(EXTRA_URIS) ?: emptyList()
-        val startIndex = intent.getIntExtra(EXTRA_INDEX, 0)
-        val caption: String = intent.getStringExtra(EXTRA_CAPTION) ?: ""
+        val uris: List<String> = intent.getStringArrayListExtra(EXTRA_URIS) ?: emptyList()
+        val startIndex: Int    = intent.getIntExtra(EXTRA_INDEX, 0)
+        val caption: String    = intent.getStringExtra(EXTRA_CAPTION) ?: ""
 
-        val vp = findViewById<ViewPager2>(R.id.vpImages)
-        val counter = findViewById<TextView>(R.id.tvCounter)
-        val btnClose = findViewById<View>(R.id.btnClose)
+        val vp        = findViewById<ViewPager2>(R.id.vpImages)
+        val counter   = findViewById<TextView>(R.id.tvCounter)
+        val btnClose  = findViewById<View>(R.id.btnClose)
         val tvCaption = findViewById<TextView>(R.id.tvCaption)
 
-        // Image ke saath likha hua message (caption) neeche dikhao — khaali ho to chhupa do
         if (caption.isBlank()) {
             tvCaption.visibility = View.GONE
         } else {
