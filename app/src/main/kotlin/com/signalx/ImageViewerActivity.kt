@@ -93,7 +93,7 @@ class ImageViewActivity : AppCompatActivity() {
         override fun getItemCount() = uris.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            // Page badlne par scale reset
+            // Naye page par scale bilkul reset karo
             holder.iv.scaleX = 1f
             holder.iv.scaleY = 1f
 
@@ -101,8 +101,11 @@ class ImageViewActivity : AppCompatActivity() {
                 .load(Uri.parse(uris[position]))
                 .into(holder.iv)
 
+            // -------------------------------------------------------
             // Pinch-to-zoom
+            // -------------------------------------------------------
             var scaleFactor = 1f
+
             val scaleDetector = ScaleGestureDetector(
                 holder.iv.context,
                 object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -111,32 +114,41 @@ class ImageViewActivity : AppCompatActivity() {
                         scaleFactor = scaleFactor.coerceIn(1f, 5f)
                         holder.iv.scaleX = scaleFactor
                         holder.iv.scaleY = scaleFactor
-                        // Zoom mein ho to ViewPager2 ko swipe mat karne do
-                        holder.iv.parent?.requestDisallowInterceptTouchEvent(scaleFactor > 1.05f)
                         return true
                     }
                 }
             )
 
-            holder.iv.setOnTouchListener { _, event ->
+            // isClickable = true zaroori hai — iske bina ImageView touch consume
+            // nahi karta aur ScaleGestureDetector ko events milte hi nahi.
+            holder.iv.isClickable = true
+
+            holder.iv.setOnTouchListener { v, event ->
+                // Pehle ScaleGestureDetector ko dena zaroori hai
                 scaleDetector.onTouchEvent(event)
-                when {
-                    // 2+ ungliyaan → zoom gesture
-                    event.pointerCount >= 2 -> {
-                        holder.iv.parent?.requestDisallowInterceptTouchEvent(true)
-                        true
+
+                when (event.actionMasked) {
+                    // Doosri ungli neeche aayi → TURANT ViewPager2 ko rok do
+                    MotionEvent.ACTION_POINTER_DOWN -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
                     }
-                    // Zoom hua hua hai → swipe mat karne do
-                    scaleFactor > 1.05f -> {
-                        holder.iv.parent?.requestDisallowInterceptTouchEvent(true)
-                        true
-                    }
-                    // Normal single touch → ViewPager2 ko jaane do (swipe kaam kare)
-                    else -> {
-                        holder.iv.parent?.requestDisallowInterceptTouchEvent(false)
-                        false
+                    // Sab ungliyaan uthin aur zoom nahi hai → swipe wapas chalu
+                    MotionEvent.ACTION_UP,
+                    MotionEvent.ACTION_CANCEL -> {
+                        if (scaleFactor <= 1.05f) {
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
+                        }
                     }
                 }
+
+                // Zoom hua hua ho to single finger bhi ViewPager2 ko nahi milni chahiye
+                if (scaleFactor > 1.05f) {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+
+                // 2+ ungliyaan ya zoom → consume karo (true)
+                // 1 ungli + no zoom → ViewPager2 ko swipe karne do (false)
+                event.pointerCount >= 2 || scaleFactor > 1.05f
             }
         }
     }

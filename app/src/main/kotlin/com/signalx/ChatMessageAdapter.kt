@@ -24,7 +24,6 @@ class ChatMessageAdapter(
         private const val TYPE_MESSAGE        = 0
         private const val TYPE_BANNER         = 1
         private const val TYPE_REVEALED_BLOCK = 2
-        // Bubble mein kitne characters ke baad "..." lagao
         private const val BUBBLE_CAPTION_MAX  = 60
     }
 
@@ -145,16 +144,19 @@ class ChatMessageAdapter(
     }
 
     /**
-     * Bubble mein dikhne wala caption banao:
-     * - Sab non-blank captions comma se jodo: "Vk1, Vk2"
-     * - Zyada lamba ho to 57 chars + "..."
-     * - Sab blank hon to null
+     * Bubble caption:
+     * - DEFAULT SYSTEM (sab same): sirf EK baar dikhao — "Caption 1"
+     * - PER-IMAGE (alag-alag): comma se jodo — "Cap 1, Cap 3"
+     * - Zyada lamba ho to "..." lagao
      */
     private fun buildBubbleCaption(caption: String?): String? {
         if (caption.isNullOrBlank()) return null
         val parts = caption.split(AttachmentPanelView.CAP_SEPARATOR).filter { it.isNotBlank() }
         if (parts.isEmpty()) return null
-        val joined = parts.joinToString(", ")
+        // distinct() se duplicate hata do (default system mein sab same hote hain)
+        val uniqueParts = parts.distinct()
+        val joined = if (uniqueParts.size == 1) uniqueParts[0]
+                     else uniqueParts.joinToString(", ")
         return if (joined.length > BUBBLE_CAPTION_MAX) joined.take(BUBBLE_CAPTION_MAX - 3) + "..." else joined
     }
 
@@ -173,7 +175,6 @@ class ChatMessageAdapter(
                     val uris = text.removePrefix("IMG::").split("||").filter { it.isNotBlank() }
                     h.tvText.visibility = View.GONE
 
-                    // Sab captions comma se jodkar bubble mein dikhao
                     val bubbleCaption = buildBubbleCaption(caption)
 
                     if (uris.size == 1) {
