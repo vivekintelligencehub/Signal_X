@@ -95,7 +95,18 @@ class AttachmentPanelView @JvmOverloads constructor(
     private var buckets: List<MediaBucket> = emptyList()
     private var selectedBucketId: String? = null
     private val selection = mutableListOf<RecentImage>()
+
+    // Har selected image ka apna caption
     private val perImageCaptions = mutableListOf<String>()
+
+    /**
+     * Per-image mode ka signal:
+     * TRUE  = user ne editor mein images switch kiin → intentional per-image editing
+     *         → CAP_SEPARATOR ke saath store karo (bubble mein sab captions dikhenge)
+     * FALSE = etCaption se direct caption ya sirf ek image dekha editor mein
+     *         → plain text store karo (bubble mein ek baar dikhega)
+     */
+    private var perImageModified = false
 
     private var imagesLoaded = false
     private var imagesLoading = false
@@ -591,8 +602,7 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
     private fun showDiscardPopup() {
         if (pendingCollapseFrom == null) return
-        dpThumbs.removeAllViews()
-        val size = dp(46f)
+        dpThumbs.removeAllViews(); val size = dp(46f)
         selection.take(5).forEach { img ->
             val iv = ImageView(context); val lp = LinearLayout.LayoutParams(size, size).also { it.marginEnd = dp(6f) }
             iv.layoutParams = lp; iv.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -626,7 +636,9 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
 
     private fun clearSelection() {
-        selection.clear(); perImageCaptions.clear()
+        selection.clear()
+        perImageCaptions.clear()
+        perImageModified = false          // reset: naya selection = fresh state
         imagesAdapter.updateSelection(emptyList<Uri>()); updateSelectionBar()
     }
     private fun updateSelectionBar() {
@@ -641,33 +653,42 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
 
     // -----------------------------------------------------------------------
-    // Send — caption storage format:
-    //   SINGLE image   : plain text (koi separator nahi)
-    //   DEFAULT system : plain text (koi separator nahi) — sab images par same caption
-    //   PER-IMAGE      : CAP_SEPARATOR se joined — alag-alag captions
-    // Bubble aur Viewer is format se samajhte hain.
+    // Send
+    //
+    // Caption storage format (bubble aur viewer isi se samajhte hain):
+    //
+    //   DEFAULT (direct etCaption ya editor mein images switch nahi ki):
+    //       "Hello"                     → koi separator nahi → bubble: "Hello" (ek baar)
+    //
+    //   PER-IMAGE (editor mein images switch ki, intentional per-image):
+    //       "Hello\u001EHello\u001EHi" → separator hai → bubble: "Hello, Hello, Hi"
+    //       even if same: "Hello\u001EHello\u001EHello" → bubble: "Hello, Hello, Hello"
     // -----------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
         if (editorOpen) saveCurrentEditorCaption()
         syncCaptionSize()
 
-        val quick = etCaption.text.toString().trim()
+        val quick    = etCaption.text.toString().trim()
         val allBlank = perImageCaptions.all { it.isBlank() }
 
         val finalCaption: String = when {
-            // Single image: perImageCaptions[0] ya etCaption
             selection.size == 1 ->
+                // Single image: hamesha plain text
                 perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
 
-            // DEFAULT SYSTEM: direct caption → ek baar store karo (koi separator nahi)
-            // Bubble mein ek dikhega, Viewer mein sab pages par same dikhega
-            allBlank && quick.isNotBlank() -> quick
+            // Per-image mode: user ne editor mein images switch ki thi
+            // → CAP_SEPARATOR ke saath store karo (same caption ho to bhi)
+            perImageModified && !allBlank ->
+                perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
 
-            // PER-IMAGE: editor se alag-alag captions set hain → separator ke saath store karo
-            !allBlank -> perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
+            // Default mode: direct caption ya editor khola par images switch nahi ki
+            // → plain text store karo (bubble mein ek baar dikhega)
+            !allBlank ->
+                perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
 
-            // Koi caption nahi
+            quick.isNotBlank() -> quick
+
             else -> ""
         }
 
@@ -683,6 +704,8 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (perImageCaptions.all { it.isBlank() } && quick.isNotBlank()) {
             for (i in perImageCaptions.indices) perImageCaptions[i] = quick
         }
+        // Editor khulte hi perImageModified reset — user abhi kuch nahi kiya
+        perImageModified = false
         editorOpen = true; edIndex = 0
         edCaption.setText(perImageCaptions.getOrElse(0) { "" })
         edCaption.hint = captionHint(0)
@@ -701,9 +724,15 @@ class AttachmentPanelView @JvmOverloads constructor(
             iv.setBackgroundColor(if (cur) 0xFF00A884.toInt() else 0x00000000); iv.alpha = if (cur) 1f else 0.55f
             Glide.with(iv).load(img.uri).centerCrop().into(iv)
             iv.setOnClickListener {
-                saveCurrentEditorCaption(); edIndex = k
+                if (k != edIndex) {
+                    // User ne alag image tap ki = intentional per-image editing
+                    perImageModified = true
+                }
+                saveCurrentEditorCaption()
+                edIndex = k
                 edCaption.setText(perImageCaptions.getOrElse(k) { "" })
-                edCaption.hint = captionHint(k); renderEditor()
+                edCaption.hint = captionHint(k)
+                renderEditor()
             }
             edStrip.addView(iv)
         }
@@ -829,10 +858,10 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun dp(v: Float): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, resources.displayMetrics).toInt()
 
     companion object {
-        private const val MIN_FLING  = 1000f
+        private const val MIN_FLING    = 1000f
         private const val STRONG_FLING = 2600f
-        private const val PREFS_NAME = "attach_panel_prefs"
-        private const val KEY_KB_PX  = "kb_px"
+        private const val PREFS_NAME   = "attach_panel_prefs"
+        private const val KEY_KB_PX    = "kb_px"
         private const val PENDING_OPEN_TIMEOUT_MS = 650L
         private const val DEBUG_OVERLAY = false
         const val CAP_SEPARATOR = "\u001E"
