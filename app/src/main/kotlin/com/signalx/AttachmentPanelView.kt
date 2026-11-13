@@ -96,59 +96,52 @@ class AttachmentPanelView @JvmOverloads constructor(
     private var selectedBucketId: String? = null
     private val selection = mutableListOf<RecentImage>()
 
-    // Har selected image ka apna caption
+    // -------------------------------------------------------------------------
+    // Caption — do BILKUL ALAG sources, koi overlap nahi:
+    //
+    //   SOURCE 1: etCaption (bottom bar)
+    //       Editor kabhi nahi khula to yahi use hoga.
+    //       Plain text store hota hai (koi separator nahi).
+    //       Sab images par ek hi caption dikhta hai.
+    //
+    //   SOURCE 2: perImageCaptions (editor ke andar strip se)
+    //       Jab bhi editor khulta hai, yahi source active ho jaata hai.
+    //       etCaption bilkul ignore ho jaata hai.
+    //       CAP_SEPARATOR se join hokar store hota hai.
+    //       Viewer mein har image apna caption dekhta hai.
+    // -------------------------------------------------------------------------
     private val perImageCaptions = mutableListOf<String>()
 
     /**
-     * Per-image mode ka signal:
-     * TRUE  = user ne editor mein images switch kiin → intentional per-image editing
-     *         → CAP_SEPARATOR ke saath store karo (bubble mein sab captions dikhenge)
-     * FALSE = etCaption se direct caption ya sirf ek image dekha editor mein
-     *         → plain text store karo (bubble mein ek baar dikhega)
+     * TRUE = is selection ke liye editor khula tha → SOURCE 2 use karo.
+     * FALSE = editor kabhi nahi khula → SOURCE 1 (etCaption) use karo.
      */
-    private var perImageModified = false
+    private var editorWasOpened = false
 
-    private var imagesLoaded = false
+    private var imagesLoaded  = false
     private var imagesLoading = false
     private val ioExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val maxSelection = 30
 
-    private var panelH = 0
-    private var fullH = 0
-    private var trackedW = 0
-    private var kbPx = 0
-    private var trayPx = 0
-    private var optH = 0
-    private var albumHeightPx = 0
-    private var watchedParent: View? = null
+    private var panelH = 0; private var fullH = 0; private var trackedW = 0
+    private var kbPx = 0; private var trayPx = 0; private var optH = 0
+    private var albumHeightPx = 0; private var watchedParent: View? = null
 
-    private val headerH: Float
-        get() = (headerSection.height.takeIf { it > 0 } ?: dp(68f)).toFloat()
-
-    private val fullTop: Float get() = 0f
-    private val middleTop: Float get() = panelH * 0.35f
+    private val headerH: Float get() = (headerSection.height.takeIf { it > 0 } ?: dp(68f)).toFloat()
+    private val fullTop:      Float get() = 0f
+    private val middleTop:    Float get() = panelH * 0.35f
     private val collapsedTop: Float get() = (panelH - trayPx + optH).toFloat() - headerH
-    private val hiddenTop: Float get() = panelH.toFloat()
+    private val hiddenTop:    Float get() = panelH.toFloat()
 
-    private var curTop = 0f
-    private var currentState = State.COLLAPSED
-    private var panelVisible = false
-
-    private var openingClosing = false
-    private var stateAnimating = false
-    private var dragging = false
+    private var curTop = 0f; private var currentState = State.COLLAPSED; private var panelVisible = false
+    private var openingClosing = false; private var stateAnimating = false; private var dragging = false
     private var animGeneration = 0
 
-    private var pendingOpen = false
-    private var pendingOpenBaseH = 0
-    private val pendingOpenTimeout = Runnable {
-        if (pendingOpen) { pendingOpen = false; startOpen() }
-    }
+    private var pendingOpen = false; private var pendingOpenBaseH = 0
+    private val pendingOpenTimeout = Runnable { if (pendingOpen) { pendingOpen = false; startOpen() } }
 
-    private var kbCandidate = 0
-    private var lastWindowH = 0
-    private var lastWindowChangeAt = 0L
+    private var kbCandidate = 0; private var lastWindowH = 0; private var lastWindowChangeAt = 0L
     private val kbCommitRunnable = Runnable {
         val c = kbCandidate
         if (c > 0 && (c > kbPx || c < kbPx * 0.8f) && fullH - lastWindowH == c) {
@@ -160,19 +153,15 @@ class AttachmentPanelView @JvmOverloads constructor(
     private var downX = 0f; private var downY = 0f
     private var dragStartTop = 0f; private var dragStartState = State.COLLAPSED
     private var downZone = Zone.OUTSIDE
-    private var velocityTracker: VelocityTracker? = null
-    private var animator: ValueAnimator? = null
+    private var velocityTracker: VelocityTracker? = null; private var animator: ValueAnimator? = null
 
     private var pendingCollapseFrom: State? = null
-    private var contentPushView: View? = null
-    private var pushOriginalBottom = 0
+    private var contentPushView: View? = null; private var pushOriginalBottom = 0
     private var abDownY = 0f; private var abDragging = false
     private var editorOpen = false; private var edIndex = 0
 
-    private val headerBg = GradientDrawable()
-    private val bodyBg   = GradientDrawable()
-    private val sheetColor = 0xFF11181C.toInt()
-    private var gridScrollLocked = true
+    private val headerBg = GradientDrawable(); private val bodyBg = GradientDrawable()
+    private val sheetColor = 0xFF11181C.toInt(); private var gridScrollLocked = true
 
     private val parentLayoutListener =
         View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> trackWindowSize(v.width, v.height) }
@@ -181,35 +170,35 @@ class AttachmentPanelView @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.view_attachment_sheet, this, true)
         isClickable = false
 
-        scrimView            = findViewById(R.id.scrimView)
-        optionsContainer     = findViewById(R.id.optionsContainer)
-        gallerySheet         = findViewById(R.id.gallerySheet)
-        headerSection        = findViewById(R.id.headerSection)
-        btnCloseGallery      = findViewById(R.id.btnCloseGallery)
-        btnRecents           = findViewById(R.id.btnRecents)
-        btnHd                = findViewById(R.id.btnHd)
-        galleryRecycler      = findViewById(R.id.galleryRecycler)
-        selectionBar         = findViewById(R.id.selectionBar)
-        barThumb             = findViewById(R.id.barThumb)
-        capEmoji             = findViewById(R.id.capEmoji)
-        etCaption            = findViewById(R.id.etCaption)
-        btnSendImages        = findViewById(R.id.btnSendImages)
-        tvSendCount          = findViewById(R.id.tvSendCount)
-        discardPopup         = findViewById(R.id.discardPopup)
-        dpThumbs             = findViewById(R.id.dpThumbs)
-        btnDpCancel          = findViewById(R.id.btnDpCancel)
-        btnDpDiscard         = findViewById(R.id.btnDpDiscard)
-        albumSheet           = findViewById(R.id.albumSheet)
-        albumDragZone        = findViewById(R.id.albumDragZone)
-        albumRecycler        = findViewById(R.id.albumRecycler)
-        fileBox              = findViewById(R.id.fileBox)
-        editorOverlay        = findViewById(R.id.editorOverlay)
-        edClose              = findViewById(R.id.edClose)
-        edStrip              = findViewById(R.id.edStrip)
-        edHd                 = findViewById(R.id.edHd)
-        edImage              = findViewById(R.id.edImage)
-        edCaption            = findViewById(R.id.edCaption)
-        edCount              = findViewById(R.id.edCount)
+        scrimView        = findViewById(R.id.scrimView)
+        optionsContainer = findViewById(R.id.optionsContainer)
+        gallerySheet     = findViewById(R.id.gallerySheet)
+        headerSection    = findViewById(R.id.headerSection)
+        btnCloseGallery  = findViewById(R.id.btnCloseGallery)
+        btnRecents       = findViewById(R.id.btnRecents)
+        btnHd            = findViewById(R.id.btnHd)
+        galleryRecycler  = findViewById(R.id.galleryRecycler)
+        selectionBar     = findViewById(R.id.selectionBar)
+        barThumb         = findViewById(R.id.barThumb)
+        capEmoji         = findViewById(R.id.capEmoji)
+        etCaption        = findViewById(R.id.etCaption)
+        btnSendImages    = findViewById(R.id.btnSendImages)
+        tvSendCount      = findViewById(R.id.tvSendCount)
+        discardPopup     = findViewById(R.id.discardPopup)
+        dpThumbs         = findViewById(R.id.dpThumbs)
+        btnDpCancel      = findViewById(R.id.btnDpCancel)
+        btnDpDiscard     = findViewById(R.id.btnDpDiscard)
+        albumSheet       = findViewById(R.id.albumSheet)
+        albumDragZone    = findViewById(R.id.albumDragZone)
+        albumRecycler    = findViewById(R.id.albumRecycler)
+        fileBox          = findViewById(R.id.fileBox)
+        editorOverlay    = findViewById(R.id.editorOverlay)
+        edClose          = findViewById(R.id.edClose)
+        edStrip          = findViewById(R.id.edStrip)
+        edHd             = findViewById(R.id.edHd)
+        edImage          = findViewById(R.id.edImage)
+        edCaption        = findViewById(R.id.edCaption)
+        edCount          = findViewById(R.id.edCount)
 
         kbPx = prefs.getInt(KEY_KB_PX, 0)
 
@@ -234,8 +223,7 @@ class AttachmentPanelView @JvmOverloads constructor(
         galleryRecycler.layoutManager = object : GridLayoutManager(context, 4) {
             override fun canScrollVertically(): Boolean = !gridScrollLocked && super.canScrollVertically()
         }
-        galleryRecycler.adapter = imagesAdapter
-        galleryRecycler.overScrollMode = View.OVER_SCROLL_NEVER
+        galleryRecycler.adapter = imagesAdapter; galleryRecycler.overScrollMode = View.OVER_SCROLL_NEVER
 
         albumsAdapter = AlbumsAdapter(emptyList()) { bucket -> onAlbumPicked(bucket) }
         albumRecycler.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
@@ -256,8 +244,10 @@ class AttachmentPanelView @JvmOverloads constructor(
         optionsContainer.alpha = 0f; curTop = hiddenTop
 
         if (DEBUG_OVERLAY) {
-            val tv = TextView(context); tv.setTextColor(0xFFFFFF00.toInt()); tv.setBackgroundColor(0xB3000000.toInt())
-            tv.textSize = 9f; tv.typeface = Typeface.MONOSPACE; tv.setPadding(dp(4f), dp(2f), dp(4f), dp(2f))
+            val tv = TextView(context)
+            tv.setTextColor(0xFFFFFF00.toInt()); tv.setBackgroundColor(0xB3000000.toInt())
+            tv.textSize = 9f; tv.typeface = Typeface.MONOSPACE
+            tv.setPadding(dp(4f), dp(2f), dp(4f), dp(2f))
             tv.isClickable = false; tv.elevation = dp(20f).toFloat()
             val dlp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             dlp.gravity = Gravity.TOP or Gravity.START; dlp.topMargin = dp(48f)
@@ -310,6 +300,9 @@ class AttachmentPanelView @JvmOverloads constructor(
 
     private fun toolPhase2(name: String) = toast("$name \u2014 option rakha hai, working phase-2")
 
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
     fun isOpen(): Boolean = panelVisible || pendingOpen
     fun setContentPushView(v: View) { contentPushView = v; pushOriginalBottom = v.paddingBottom }
 
@@ -325,7 +318,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
         startOpen()
     }
-
     private fun startOpen() {
         syncHeightFromParent(); if (panelH == 0) return
         pristineReset(); applySizing()
@@ -334,7 +326,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         loadImagesIfNeeded(force = false)
         curTop = hiddenTop; updatePositions(curTop); animateOpenClose(opening = true)
     }
-
     fun hidePanel() {
         if (pendingOpen) {
             pendingOpen = false; removeCallbacks(pendingOpenTimeout)
@@ -346,13 +337,11 @@ class AttachmentPanelView @JvmOverloads constructor(
         resetGalleryToLatest(); currentState = State.COLLAPSED
         onPanelVisibilityChanged?.invoke(false); animateOpenClose(opening = false)
     }
-
     fun refreshImages() { imagesLoaded = false; loadImagesIfNeeded(force = true) }
-
     fun handleBackPress(): Boolean {
         if (!panelVisible) return false
-        if (editorOpen) { closeEditor(); return true }
-        if (isAlbumOpen()) { closeAlbums(); return true }
+        if (editorOpen)                      { closeEditor(); return true }
+        if (isAlbumOpen())                   { closeAlbums(); return true }
         if (discardPopup.visibility == VISIBLE) { btnDpCancel.performClick(); return true }
         if (selection.isNotEmpty() && currentState != State.COLLAPSED) { collapseThenAsk(currentState); return true }
         return when (currentState) {
@@ -373,6 +362,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         gridScrollLocked = true; downZone = Zone.OUTSIDE
     }
 
+    // -------------------------------------------------------------------------
+    // Gallery
+    // -------------------------------------------------------------------------
     private fun resetGalleryToLatest() {
         if (selectedBucketId != null) {
             selectedBucketId = null; btnRecents.text = "Recents \u25be"
@@ -385,9 +377,14 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (selection.isEmpty() && pendingCollapseFrom == null) resetGalleryToLatest()
     }
 
+    // -------------------------------------------------------------------------
+    // Window / keyboard
+    // -------------------------------------------------------------------------
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        (parent as? View)?.let { p -> watchedParent = p; p.addOnLayoutChangeListener(parentLayoutListener); trackWindowSize(p.width, p.height) }
+        (parent as? View)?.let { p ->
+            watchedParent = p; p.addOnLayoutChangeListener(parentLayoutListener); trackWindowSize(p.width, p.height)
+        }
     }
     private fun syncHeightFromParent() {
         (parent as? View)?.let { p -> if (p.height > 0) { panelH = p.height; trackWindowSize(p.width, p.height) } }
@@ -408,6 +405,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Sizing
+    // -------------------------------------------------------------------------
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh); panelH = h; trackWindowSize(w, h); applySizing()
     }
@@ -453,12 +453,15 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun topOf(s: State): Float = when (s) { State.FULL -> fullTop; State.MIDDLE -> middleTop; State.COLLAPSED -> collapsedTop }
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
+    // -------------------------------------------------------------------------
+    // Open / close animation
+    // -------------------------------------------------------------------------
     private fun animateOpenClose(opening: Boolean) {
         val myGen = ++animGeneration; animator?.cancel(); animator = null
         openingClosing = true; stateAnimating = false
-        val startFrac  = if (panelH > 0) curTop / panelH else 1f
-        val pushStart  = ((contentPushView?.paddingBottom ?: 0) - pushOriginalBottom).coerceAtLeast(0)
-        val optFrom    = optionsContainer.alpha; val optTo = if (opening) 1f else 0f
+        val startFrac = if (panelH > 0) curTop / panelH else 1f
+        val pushStart = ((contentPushView?.paddingBottom ?: 0) - pushOriginalBottom).coerceAtLeast(0)
+        val optFrom   = optionsContainer.alpha; val optTo = if (opening) 1f else 0f
         val anim = ValueAnimator.ofFloat(0f, 1f)
         animator = anim; anim.duration = 240; anim.interpolator = DecelerateInterpolator(1.4f)
         anim.addUpdateListener { a ->
@@ -480,6 +483,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         anim.start()
     }
 
+    // -------------------------------------------------------------------------
+    // Touch
+    // -------------------------------------------------------------------------
     private fun zoneAt(x: Float, y: Float): Zone {
         if (selectionBar.visibility == VISIBLE && y >= selectionBar.top && y <= selectionBar.bottom) return Zone.BAR
         val st = curTop; val inSheet = y >= st; val inHeader = inSheet && y <= st + headerH
@@ -554,7 +560,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
         when { target == null -> hidePanel(); target == State.COLLAPSED -> collapseThenAsk(startedFrom); else -> goState(target) }
     }
-
     fun goState(state: State) = goStateInternal(state, null)
     private fun goStateInternal(state: State, onEnd: (() -> Unit)?) {
         val myGen = ++animGeneration; animator?.cancel(); animator = null
@@ -581,7 +586,6 @@ class AttachmentPanelView @JvmOverloads constructor(
         })
         anim.start()
     }
-
     private fun updatePositions(y: Float) {
         curTop = y; gallerySheet.translationY = y
         val revealSpan = (collapsedTop - middleTop).coerceAtLeast(1f)
@@ -593,9 +597,12 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
     private fun updateDebug() {
         if (!DEBUG_OVERLAY) return
-        dbgView?.text = "st=$currentState vis=$panelVisible pend=$pendingOpen\ntop=${curTop.toInt()} H=$panelH full=$fullH\nkb=$kbPx tray=$trayPx opt=$optH hdr=${headerH.toInt()}\noc=$openingClosing sa=$stateAnimating dr=$dragging sel=${selection.size} alb=${isAlbumOpen()}"
+        dbgView?.text = "st=$currentState vis=$panelVisible pend=$pendingOpen\ntop=${curTop.toInt()} H=$panelH full=$fullH\nkb=$kbPx tray=$trayPx opt=$optH hdr=${headerH.toInt()}\noc=$openingClosing sa=$stateAnimating dr=$dragging sel=${selection.size} editorOpened=$editorWasOpened"
     }
 
+    // -------------------------------------------------------------------------
+    // RULE 3
+    // -------------------------------------------------------------------------
     private fun collapseThenAsk(fromState: State) {
         if (selection.isEmpty() || fromState == State.COLLAPSED) { goStateInternal(State.COLLAPSED, null); return }
         pendingCollapseFrom = fromState; goStateInternal(State.COLLAPSED) { showDiscardPopup() }
@@ -618,6 +625,9 @@ class AttachmentPanelView @JvmOverloads constructor(
             .setDuration(180).withEndAction { discardPopup.visibility = GONE }.start()
     }
 
+    // -------------------------------------------------------------------------
+    // Photo tap
+    // -------------------------------------------------------------------------
     private fun onThumbTap(img: RecentImage) {
         if (openingClosing || pendingOpen) return
         if (SystemClock.uptimeMillis() - lastWindowChangeAt < 250) return
@@ -634,11 +644,10 @@ class AttachmentPanelView @JvmOverloads constructor(
         imagesAdapter.updateSelection(selection.map { it.uri }); updateSelectionBar()
         if (added && currentState == State.COLLAPSED) goStateInternal(State.MIDDLE, null)
     }
-
     private fun clearSelection() {
         selection.clear()
         perImageCaptions.clear()
-        perImageModified = false          // reset: naya selection = fresh state
+        editorWasOpened = false          // fresh selection = no editor yet
         imagesAdapter.updateSelection(emptyList<Uri>()); updateSelectionBar()
     }
     private fun updateSelectionBar() {
@@ -646,50 +655,42 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (n > 0) { tvSendCount.text = n.toString(); Glide.with(barThumb).load(selection.first().uri).centerCrop().into(barThumb) }
     }
 
-    private fun saveCurrentEditorCaption() { if (edIndex < perImageCaptions.size) perImageCaptions[edIndex] = edCaption.text.toString() }
+    // -------------------------------------------------------------------------
+    // Caption helpers
+    // -------------------------------------------------------------------------
+    private fun saveCurrentEditorCaption() {
+        if (edIndex < perImageCaptions.size) perImageCaptions[edIndex] = edCaption.text.toString()
+    }
     private fun syncCaptionSize() {
         while (perImageCaptions.size < selection.size) perImageCaptions.add("")
         while (perImageCaptions.size > selection.size) perImageCaptions.removeLastOrNull()
     }
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Send
     //
-    // Caption storage format (bubble aur viewer isi se samajhte hain):
+    //   SOURCE 1 — etCaption (editor kabhi nahi khula):
+    //       finalCaption = etCaption.text  (plain text, no separator)
+    //       Viewer: same caption sab pages par
+    //       Bubble: ek baar dikhega
     //
-    //   DEFAULT (direct etCaption ya editor mein images switch nahi ki):
-    //       "Hello"                     → koi separator nahi → bubble: "Hello" (ek baar)
-    //
-    //   PER-IMAGE (editor mein images switch ki, intentional per-image):
-    //       "Hello\u001EHello\u001EHi" → separator hai → bubble: "Hello, Hello, Hi"
-    //       even if same: "Hello\u001EHello\u001EHello" → bubble: "Hello, Hello, Hello"
-    // -----------------------------------------------------------------------
+    //   SOURCE 2 — perImageCaptions (editor khula tha):
+    //       finalCaption = cap1 + CAP_SEP + cap2 + CAP_SEP + cap3  (separator se join)
+    //       Viewer: har page apna caption
+    //       Bubble: sab captions comma se
+    // -------------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
         if (editorOpen) saveCurrentEditorCaption()
         syncCaptionSize()
 
-        val quick    = etCaption.text.toString().trim()
-        val allBlank = perImageCaptions.all { it.isBlank() }
-
-        val finalCaption: String = when {
-            selection.size == 1 ->
-                // Single image: hamesha plain text
-                perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
-
-            // Per-image mode: user ne editor mein images switch ki thi
-            // → CAP_SEPARATOR ke saath store karo (same caption ho to bhi)
-            perImageModified && !allBlank ->
-                perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
-
-            // Default mode: direct caption ya editor khola par images switch nahi ki
-            // → plain text store karo (bubble mein ek baar dikhega)
-            !allBlank ->
-                perImageCaptions.getOrElse(0) { "" }.ifBlank { quick }
-
-            quick.isNotBlank() -> quick
-
-            else -> ""
+        val finalCaption: String = if (!editorWasOpened) {
+            // SOURCE 1: etCaption — ek caption sab images ke liye
+            etCaption.text.toString().trim()
+        } else {
+            // SOURCE 2: per-image captions — separator se join
+            // Blank entries bhi rakhte hain taaki har image ka index match rahe
+            perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
         }
 
         hideKeyboardNow()
@@ -697,15 +698,16 @@ class AttachmentPanelView @JvmOverloads constructor(
         clearSelection(); closeEditor(); etCaption.setText(""); hidePanel()
     }
 
+    // -------------------------------------------------------------------------
+    // Editor
+    // -------------------------------------------------------------------------
     private fun openEditor() {
         if (selection.isEmpty()) return
         syncCaptionSize()
-        val quick = etCaption.text.toString().trim()
-        if (perImageCaptions.all { it.isBlank() } && quick.isNotBlank()) {
-            for (i in perImageCaptions.indices) perImageCaptions[i] = quick
-        }
-        // Editor khulte hi perImageModified reset — user abhi kuch nahi kiya
-        perImageModified = false
+        // SOURCE 2 activate: editor khula — ab etCaption ignore hoga
+        // NO pre-fill: editor apne captions khud se start karta hai
+        // (agar user ne pehle editor mein kuch likha tha to woh preserve hota hai)
+        editorWasOpened = true
         editorOpen = true; edIndex = 0
         edCaption.setText(perImageCaptions.getOrElse(0) { "" })
         edCaption.hint = captionHint(0)
@@ -724,10 +726,6 @@ class AttachmentPanelView @JvmOverloads constructor(
             iv.setBackgroundColor(if (cur) 0xFF00A884.toInt() else 0x00000000); iv.alpha = if (cur) 1f else 0.55f
             Glide.with(iv).load(img.uri).centerCrop().into(iv)
             iv.setOnClickListener {
-                if (k != edIndex) {
-                    // User ne alag image tap ki = intentional per-image editing
-                    perImageModified = true
-                }
                 saveCurrentEditorCaption()
                 edIndex = k
                 edCaption.setText(perImageCaptions.getOrElse(k) { "" })
@@ -744,10 +742,14 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun closeEditor() {
         if (!editorOpen) return
         saveCurrentEditorCaption(); editorOpen = false
-        if (selection.size == 1) etCaption.setText(perImageCaptions.getOrElse(0) { "" })
-        editorOverlay.animate().alpha(0f).setDuration(140).withEndAction { editorOverlay.visibility = GONE; editorOverlay.alpha = 1f }.start()
+        editorOverlay.animate().alpha(0f).setDuration(140).withEndAction {
+            editorOverlay.visibility = GONE; editorOverlay.alpha = 1f
+        }.start()
     }
 
+    // -------------------------------------------------------------------------
+    // HD
+    // -------------------------------------------------------------------------
     private fun setHd(on: Boolean) {
         btnHd.isSelected = on; btnHd.text = if (on) "HD \u2713" else "HD"
         btnHd.setTextColor(if (on) 0xFF25D366.toInt() else 0xFFFFFFFF.toInt()); syncHdChip()
@@ -757,6 +759,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         edHd.setTextColor(if (on) 0xFF25D366.toInt() else 0xFFFFFFFF.toInt())
     }
 
+    // -------------------------------------------------------------------------
+    // Media loading
+    // -------------------------------------------------------------------------
     private fun hasMediaPermission(): Boolean {
         val perm = if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
                    else android.Manifest.permission.READ_EXTERNAL_STORAGE
@@ -776,7 +781,8 @@ class AttachmentPanelView @JvmOverloads constructor(
                     return@post
                 }
                 val loaded = result.getOrDefault(emptyList())
-                allImages = loaded; imagesLoaded = true; buckets = MediaStoreHelper.getBuckets(loaded); applyFilter()
+                allImages = loaded; imagesLoaded = true
+                buckets = MediaStoreHelper.getBuckets(loaded); applyFilter()
             }
         }
     }
@@ -785,6 +791,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         imagesAdapter.update(list.map { RecentImage(it.uri) })
     }
 
+    // -------------------------------------------------------------------------
+    // Album picker
+    // -------------------------------------------------------------------------
     private fun isAlbumOpen(): Boolean = albumSheet.visibility == VISIBLE
     private fun openAlbums() {
         if (!imagesLoaded || stateAnimating || openingClosing || dragging) return
@@ -800,7 +809,8 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
     private fun closeAlbums() {
         if (!isAlbumOpen()) return; albumSheet.animate().cancel()
-        albumSheet.animate().translationY(albumHeightPx.toFloat()).setDuration(180).withEndAction { albumSheet.visibility = GONE }.start()
+        albumSheet.animate().translationY(albumHeightPx.toFloat()).setDuration(180)
+            .withEndAction { albumSheet.visibility = GONE }.start()
     }
     private fun onAlbumPicked(bucket: MediaBucket) {
         selectedBucketId = if (bucket.id.isEmpty()) null else bucket.id
@@ -839,6 +849,9 @@ class AttachmentPanelView @JvmOverloads constructor(
         })
     }
 
+    // -------------------------------------------------------------------------
+    // Cleanup
+    // -------------------------------------------------------------------------
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         watchedParent?.removeOnLayoutChangeListener(parentLayoutListener); watchedParent = null
@@ -851,7 +864,8 @@ class AttachmentPanelView @JvmOverloads constructor(
         etCaption.clearFocus(); edCaption.clearFocus()
     }
     private fun showKeyboard(target: EditText) {
-        (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(target, InputMethodManager.SHOW_IMPLICIT)
+        (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .showSoftInput(target, InputMethodManager.SHOW_IMPLICIT)
     }
     private fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
     private fun topRadii(r: Float) = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
@@ -864,6 +878,7 @@ class AttachmentPanelView @JvmOverloads constructor(
         private const val KEY_KB_PX    = "kb_px"
         private const val PENDING_OPEN_TIMEOUT_MS = 650L
         private const val DEBUG_OVERLAY = false
+        /** SOURCE-2 captions ke beech separator — user kabhi type nahi kar sakta. */
         const val CAP_SEPARATOR = "\u001E"
     }
 
