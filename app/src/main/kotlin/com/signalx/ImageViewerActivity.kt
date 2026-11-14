@@ -2,6 +2,7 @@ package com.signalx
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -42,8 +43,6 @@ class ImageViewActivity : AppCompatActivity() {
         val startIndex: Int    = intent.getIntExtra(EXTRA_INDEX, 0)
         val captionRaw: String = intent.getStringExtra(EXTRA_CAPTION) ?: ""
 
-        // Per-image captions: CAP_SEPARATOR se split karo.
-        // Separator nahi hai → backward compat: same caption sab images par.
         val captionsList: List<String> = if (captionRaw.contains(AttachmentPanelView.CAP_SEPARATOR)) {
             val parts = captionRaw.split(AttachmentPanelView.CAP_SEPARATOR)
             List(uris.size) { i -> parts.getOrElse(i) { "" } }
@@ -51,10 +50,24 @@ class ImageViewActivity : AppCompatActivity() {
             List(uris.size) { captionRaw }
         }
 
-        val vp        = findViewById<ViewPager2>(R.id.vpImages)
-        val counter   = findViewById<TextView>(R.id.tvCounter)
-        val btnClose  = findViewById<View>(R.id.btnClose)
-        val tvCaption = findViewById<TextView>(R.id.tvCaption)
+        val vp           = findViewById<ViewPager2>(R.id.vpImages)
+        val counter      = findViewById<TextView>(R.id.tvCounter)
+        val btnClose     = findViewById<View>(R.id.btnClose)
+        val tvCaption    = findViewById<TextView>(R.id.tvCaption)
+        val btnZoomReset = findViewById<TextView>(R.id.btnZoomReset)
+
+        // Semi-transparent circular background for the zoom-out button
+        val circleBg = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(0xCC000000.toInt())
+        }
+        btnZoomReset.background = circleBg
+
+        // Adapter: wire zoom-state callback so the button shows/hides
+        val adapter = ImagePagerAdapter(uris) { isZoomed ->
+            btnZoomReset.visibility = if (isZoomed) View.VISIBLE else View.GONE
+        }
+        vp.adapter = adapter
 
         fun showCaptionAt(position: Int) {
             val cap = captionsList.getOrElse(position) { "" }
@@ -62,7 +75,6 @@ class ImageViewActivity : AppCompatActivity() {
             else { tvCaption.visibility = View.VISIBLE; tvCaption.text = cap }
         }
 
-        vp.adapter = ImagePagerAdapter(uris)
         vp.setCurrentItem(startIndex, false)
         counter.text = "${startIndex + 1} / ${uris.size}"
         showCaptionAt(startIndex)
@@ -71,17 +83,36 @@ class ImageViewActivity : AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 counter.text = "${position + 1} / ${uris.size}"
                 showCaptionAt(position)
+                // Hide zoom-out button when page changes (new image is at 1x)
+                btnZoomReset.visibility = View.GONE
             }
         })
 
         btnClose.setOnClickListener { finish() }
+
+        // Zoom-out button: reset the current page's zoom to 1x
+        btnZoomReset.setOnClickListener {
+            val currentVH = findCurrentVH(vp)
+            currentVH?.iv?.resetZoom()
+            btnZoomReset.visibility = View.GONE
+        }
     }
 
-    private class ImagePagerAdapter(private val uris: List<String>) :
-        RecyclerView.Adapter<ImagePagerAdapter.VH>() {
+    /** Access the ViewHolder for the currently visible page. */
+    private fun findCurrentVH(vp: ViewPager2): ImagePagerAdapter.VH? {
+        val rv = vp.getChildAt(0) as? RecyclerView ?: return null
+        return rv.findViewHolderForAdapterPosition(vp.currentItem) as? ImagePagerAdapter.VH
+    }
+
+    // -------------------------------------------------------------------------
+    // Adapter
+    // -------------------------------------------------------------------------
+    class ImagePagerAdapter(
+        private val uris: List<String>,
+        private val onZoomStateChanged: (zoomed: Boolean) -> Unit
+    ) : RecyclerView.Adapter<ImagePagerAdapter.VH>() {
 
         class VH(v: View) : RecyclerView.ViewHolder(v) {
-            // ZoomableImageView — zoom, pan, ViewPager2 handshake sab internal
             val iv: ZoomableImageView = v.findViewById(R.id.ivFullImage)
         }
 
@@ -92,9 +123,9 @@ class ImageViewActivity : AppCompatActivity() {
         override fun getItemCount() = uris.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            // Reset zoom state before loading new image
             holder.iv.resetForNewImage()
-
+            // Forward zoom state to the activity so it can show/hide the button
+            holder.iv.onZoomStateChanged = onZoomStateChanged
             Glide.with(holder.iv.context)
                 .load(Uri.parse(uris[position]))
                 .into(holder.iv)
