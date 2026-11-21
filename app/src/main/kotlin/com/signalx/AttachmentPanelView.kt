@@ -83,6 +83,7 @@ class AttachmentPanelView @JvmOverloads constructor(
     private val edStrip: LinearLayout
     private val edHd: TextView
     private val edImage: ImageView
+    private val edOverlayContainer: FrameLayout
     private val edCaption: EditText
     private val edCount: TextView
 
@@ -124,6 +125,13 @@ class AttachmentPanelView @JvmOverloads constructor(
      * Sirf editor ke andar "Rotate" button se badalta hai.
      */
     private val perImageRotations = mutableListOf<Int>()
+
+    /**
+     * Har selected image ke text overlays (jo "Text" tool se daale gaye).
+     * perImageCaptions/perImageRotations jaisa hi parallel list.
+     * Har entry ek mutable list hai kyunki ek image par multiple text boxes ho sakte hain.
+     */
+    private val perImageTextEntries = mutableListOf<MutableList<EditorTextEntry>>()
 
     private var imagesLoaded  = false
     private var imagesLoading = false
@@ -177,35 +185,36 @@ class AttachmentPanelView @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.view_attachment_sheet, this, true)
         isClickable = false
 
-        scrimView        = findViewById(R.id.scrimView)
-        optionsContainer = findViewById(R.id.optionsContainer)
-        gallerySheet     = findViewById(R.id.gallerySheet)
-        headerSection    = findViewById(R.id.headerSection)
-        btnCloseGallery  = findViewById(R.id.btnCloseGallery)
-        btnRecents       = findViewById(R.id.btnRecents)
-        btnHd            = findViewById(R.id.btnHd)
-        galleryRecycler  = findViewById(R.id.galleryRecycler)
-        selectionBar     = findViewById(R.id.selectionBar)
-        barThumb         = findViewById(R.id.barThumb)
-        capEmoji         = findViewById(R.id.capEmoji)
-        etCaption        = findViewById(R.id.etCaption)
-        btnSendImages    = findViewById(R.id.btnSendImages)
-        tvSendCount      = findViewById(R.id.tvSendCount)
-        discardPopup     = findViewById(R.id.discardPopup)
-        dpThumbs         = findViewById(R.id.dpThumbs)
-        btnDpCancel      = findViewById(R.id.btnDpCancel)
-        btnDpDiscard     = findViewById(R.id.btnDpDiscard)
-        albumSheet       = findViewById(R.id.albumSheet)
-        albumDragZone    = findViewById(R.id.albumDragZone)
-        albumRecycler    = findViewById(R.id.albumRecycler)
-        fileBox          = findViewById(R.id.fileBox)
-        editorOverlay    = findViewById(R.id.editorOverlay)
-        edClose          = findViewById(R.id.edClose)
-        edStrip          = findViewById(R.id.edStrip)
-        edHd             = findViewById(R.id.edHd)
-        edImage          = findViewById(R.id.edImage)
-        edCaption        = findViewById(R.id.edCaption)
-        edCount          = findViewById(R.id.edCount)
+        scrimView         = findViewById(R.id.scrimView)
+        optionsContainer  = findViewById(R.id.optionsContainer)
+        gallerySheet      = findViewById(R.id.gallerySheet)
+        headerSection     = findViewById(R.id.headerSection)
+        btnCloseGallery   = findViewById(R.id.btnCloseGallery)
+        btnRecents        = findViewById(R.id.btnRecents)
+        btnHd             = findViewById(R.id.btnHd)
+        galleryRecycler   = findViewById(R.id.galleryRecycler)
+        selectionBar      = findViewById(R.id.selectionBar)
+        barThumb          = findViewById(R.id.barThumb)
+        capEmoji          = findViewById(R.id.capEmoji)
+        etCaption         = findViewById(R.id.etCaption)
+        btnSendImages     = findViewById(R.id.btnSendImages)
+        tvSendCount       = findViewById(R.id.tvSendCount)
+        discardPopup      = findViewById(R.id.discardPopup)
+        dpThumbs          = findViewById(R.id.dpThumbs)
+        btnDpCancel       = findViewById(R.id.btnDpCancel)
+        btnDpDiscard      = findViewById(R.id.btnDpDiscard)
+        albumSheet        = findViewById(R.id.albumSheet)
+        albumDragZone     = findViewById(R.id.albumDragZone)
+        albumRecycler     = findViewById(R.id.albumRecycler)
+        fileBox           = findViewById(R.id.fileBox)
+        editorOverlay     = findViewById(R.id.editorOverlay)
+        edClose           = findViewById(R.id.edClose)
+        edStrip           = findViewById(R.id.edStrip)
+        edHd              = findViewById(R.id.edHd)
+        edImage           = findViewById(R.id.edImage)
+        edOverlayContainer = findViewById(R.id.edOverlayContainer)
+        edCaption         = findViewById(R.id.edCaption)
+        edCount           = findViewById(R.id.edCount)
 
         kbPx = prefs.getInt(KEY_KB_PX, 0)
 
@@ -299,7 +308,7 @@ class AttachmentPanelView @JvmOverloads constructor(
         findViewById<TextView>(R.id.toolRotate).setOnClickListener  { rotateCurrentEditorImage() }
         findViewById<TextView>(R.id.toolCrop).setOnClickListener    { toolPhase2("Crop") }
         findViewById<TextView>(R.id.toolSticker).setOnClickListener { toolPhase2("Stickers") }
-        findViewById<TextView>(R.id.toolText).setOnClickListener    { toolPhase2("Text") }
+        findViewById<TextView>(R.id.toolText).setOnClickListener    { addTextOverlay() }
         findViewById<TextView>(R.id.toolDraw).setOnClickListener    { toolPhase2("Draw") }
         findViewById<View>(R.id.edSend).setOnClickListener          { sendSelection() }
         findViewById<TextView>(R.id.edCapEmoji).setOnClickListener  { edCaption.requestFocus(); showKeyboard(edCaption) }
@@ -644,10 +653,12 @@ class AttachmentPanelView @JvmOverloads constructor(
             selection.removeAt(idx)
             if (idx < perImageCaptions.size) perImageCaptions.removeAt(idx)
             if (idx < perImageRotations.size) perImageRotations.removeAt(idx)
+            if (idx < perImageTextEntries.size) perImageTextEntries.removeAt(idx)
             added = false
         } else {
             if (selection.size >= maxSelection) { toast("Max $maxSelection photos"); return }
-            selection.add(img); perImageCaptions.add(""); perImageRotations.add(0); added = true
+            selection.add(img); perImageCaptions.add(""); perImageRotations.add(0)
+            perImageTextEntries.add(mutableListOf()); added = true
         }
         imagesAdapter.updateSelection(selection.map { it.uri }); updateSelectionBar()
         if (added && currentState == State.COLLAPSED) goStateInternal(State.MIDDLE, null)
@@ -656,6 +667,7 @@ class AttachmentPanelView @JvmOverloads constructor(
         selection.clear()
         perImageCaptions.clear()
         perImageRotations.clear()
+        perImageTextEntries.clear()
         editorWasOpened = false          // fresh selection = no editor yet
         imagesAdapter.updateSelection(emptyList<Uri>()); updateSelectionBar()
     }
@@ -675,6 +687,8 @@ class AttachmentPanelView @JvmOverloads constructor(
         while (perImageCaptions.size > selection.size) perImageCaptions.removeLastOrNull()
         while (perImageRotations.size < selection.size) perImageRotations.add(0)
         while (perImageRotations.size > selection.size) perImageRotations.removeLastOrNull()
+        while (perImageTextEntries.size < selection.size) perImageTextEntries.add(mutableListOf())
+        while (perImageTextEntries.size > selection.size) perImageTextEntries.removeLastOrNull()
     }
 
     // -------------------------------------------------------------------------
@@ -701,6 +715,124 @@ class AttachmentPanelView @JvmOverloads constructor(
     }
 
     // -------------------------------------------------------------------------
+    // Text tool (editor ke andar "T" tool)
+    //
+    // Har text box edOverlayContainer ke andar ek EditText hai:
+    //   - tap karke seedha type kar sakte ho (focus + keyboard khulta hai)
+    //   - ek finger se drag karke move kar sakte ho
+    //   - upar-right corner mein ek chhota ✕ badge hai, usse delete hota hai
+    //   - tap karke color cycle bhi ho sakta hai (EditorTextEntry.TEXT_COLORS)
+    //
+    // Position hamesha edOverlayContainer ke fraction (0f..1f) mein save hoti hai,
+    // isliye jab image badi ho (actual bitmap), position proportionally sahi rehti hai.
+    // -------------------------------------------------------------------------
+
+    private fun addTextOverlay() {
+        if (!editorOpen) return
+        if (edIndex >= perImageTextEntries.size) return
+
+        // Naya text box hamesha center mein spawn hota hai
+        val entry = EditorTextEntry(x = 0.5f, y = 0.5f, text = "")
+        perImageTextEntries[edIndex].add(entry)
+        renderTextOverlaysForCurrentImage()
+
+        // Naye box ko turant focus + keyboard do, taaki user seedha type kar sake
+        val lastChild = edOverlayContainer.getChildAt(edOverlayContainer.childCount - 1)
+        (lastChild as? EditText)?.let { et ->
+            et.requestFocus()
+            showKeyboard(et)
+        }
+    }
+
+    /**
+     * edOverlayContainer ko khaali karke current editor image (edIndex) ke saare
+     * text entries ko dobara draggable EditText views ke roop mein render karta hai.
+     * Image switch hone par (renderEditor se) yahi call hoti hai.
+     */
+    private fun renderTextOverlaysForCurrentImage() {
+        edOverlayContainer.removeAllViews()
+        if (edIndex >= perImageTextEntries.size) return
+        val entries = perImageTextEntries[edIndex]
+        entries.forEach { entry -> addDraggableTextView(entry) }
+    }
+
+    private fun addDraggableTextView(entry: EditorTextEntry) {
+        val et = EditText(context).apply {
+            setText(entry.text)
+            setTextColor(EditorTextEntry.TEXT_COLORS.getOrElse(entry.colorIndex) { 0xFFFFFFFF.toInt() })
+            textSize = 20f
+            setTypeface(typeface, Typeface.BOLD)
+            background = null
+            isSingleLine = false
+            setPadding(dp(4f), dp(4f), dp(4f), dp(4f))
+            gravity = Gravity.CENTER
+            setHorizontallyScrolling(false)
+            hint = "Type..."
+            setHintTextColor(0x80FFFFFF.toInt())
+        }
+        val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        et.layoutParams = lp
+        edOverlayContainer.addView(et)
+
+        // Position fraction ko pixel mein convert karna container ki size chahiye —
+        // container abhi measure nahi hua ho sakta, isliye post{} mein karte hain
+        edOverlayContainer.post {
+            val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
+            if (cw > 0 && ch > 0) {
+                et.x = (entry.x * cw) - (et.width / 2f).coerceAtLeast(0f)
+                et.y = (entry.y * ch) - (et.height / 2f).coerceAtLeast(0f)
+            }
+        }
+
+        // Text change ho to entry mein turant save karo (send ke waqt isi se padhte hain)
+        et.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) { entry.text = s?.toString() ?: "" }
+        })
+
+        // Color cycle: double-tap jaisa simple single-tap cycle (text ke andar cursor
+        // place karna bhi tap hi hota hai, isliye long-press ko color-cycle banate hain
+        // taaki normal typing-tap se conflict na ho)
+        et.setOnLongClickListener {
+            entry.colorIndex = (entry.colorIndex + 1) % EditorTextEntry.TEXT_COLORS.size
+            et.setTextColor(EditorTextEntry.TEXT_COLORS[entry.colorIndex])
+            true
+        }
+
+        // Drag to move — EditText apna click/focus bhi chahta hai, isliye hum
+        // drag ko tabhi "consume" karte hain jab finger sach mein hila ho (touchSlop se zyada)
+        var dLastX = 0f; var dLastY = 0f; var dMoved = false
+        et.setOnTouchListener { v, ev ->
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    dLastX = ev.rawX; dLastY = ev.rawY; dMoved = false
+                    false   // DOWN ko EditText ko bhi jaane do (focus/cursor ke liye)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = ev.rawX - dLastX; val dy = ev.rawY - dLastY
+                    if (!dMoved && (abs(dx) > touchSlop || abs(dy) > touchSlop)) dMoved = true
+                    if (dMoved) {
+                        v.x += dx; v.y += dy
+                        dLastX = ev.rawX; dLastY = ev.rawY
+                        // Live position ko fraction mein wapas save karo
+                        val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
+                        if (cw > 0 && ch > 0) {
+                            entry.x = ((v.x + v.width / 2f) / cw).coerceIn(0f, 1f)
+                            entry.y = ((v.y + v.height / 2f) / ch).coerceIn(0f, 1f)
+                        }
+                        true   // drag consume — EditText ka apna touch yahan nahi chahiye
+                    } else false
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (dMoved) { dMoved = false; true } else false  // tap tha — EditText khud handle kare (focus)
+                }
+                else -> false
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Send
     //
     //   SOURCE 1 — etCaption (editor kabhi nahi khula):
@@ -715,9 +847,13 @@ class AttachmentPanelView @JvmOverloads constructor(
     //
     //   ROTATION: har image ka apna rotation hai (perImageRotations). 0 ho to
     //   original Uri hi use hoti hai, warna ImageRotationUtil se rotated copy
-    //   banakar uska Uri bheja jaata hai. Ye bhejne se theek pehle hota hai,
-    //   taaki editor ke andar sirf preview rotate ho, asli file tabhi bane
-    //   jab user sach mein send kare.
+    //   banakar uska Uri bheja jaata hai.
+    //
+    //   TEXT: har image ke apne text overlays hain (perImageTextEntries). Koi
+    //   entry na ho ya sab blank hon to original/rotated Uri hi use hoti hai,
+    //   warna ImageTextUtil se text burn karke nayi copy banti hai. Rotation
+    //   PEHLE apply hota hai, phir usi (rotated) image par text burn hota hai—
+    //   taaki text hamesha sahi orientation mein, user ne jahan rakha wahin dikhe.
     // -------------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
@@ -731,21 +867,25 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
 
         val hasAnyRotation = perImageRotations.any { it != 0 }
+        val hasAnyText = perImageTextEntries.any { list -> list.any { it.text.isNotBlank() } }
         val selectionSnapshot = selection.toList()
 
-        if (!hasAnyRotation) {
-            // Koi rotation nahi — seedha purana behavior, koi extra kaam nahi
+        if (!hasAnyRotation && !hasAnyText) {
+            // Koi edit nahi — seedha purana behavior, koi extra kaam nahi
             finishSend(selectionSnapshot.map { it.uri }, finalCaption)
         } else {
-            // Rotation hai — background thread par rotated copies banao
+            // Rotation ya text hai — background thread par processed copies banao
             // (bitmap decode/encode heavy hai, main thread par nahi karna)
             val rotationsSnapshot = perImageRotations.toList()
+            val textsSnapshot = perImageTextEntries.map { it.toList() }
             ioExecutor.execute {
-                val rotatedUris = selectionSnapshot.mapIndexed { i, img ->
+                val finalUris = selectionSnapshot.mapIndexed { i, img ->
                     val deg = rotationsSnapshot.getOrElse(i) { 0 }
-                    ImageRotationUtil.rotateAndSave(context, img.uri, deg)
+                    val rotatedUri = ImageRotationUtil.rotateAndSave(context, img.uri, deg)
+                    val entries = textsSnapshot.getOrElse(i) { emptyList() }
+                    ImageTextUtil.burnTextAndSave(context, rotatedUri, entries)
                 }
-                mainHandler.post { finishSend(rotatedUris, finalCaption) }
+                mainHandler.post { finishSend(finalUris, finalCaption) }
             }
         }
     }
@@ -799,6 +939,8 @@ class AttachmentPanelView @JvmOverloads constructor(
         // (animate nahi — ye ek snap hai, 90° step animation sirf button dabane par)
         edImage.animate().cancel()
         edImage.rotation = perImageRotations.getOrElse(edIndex) { 0 }.toFloat()
+        // Is image ke apne text overlays dikhao
+        renderTextOverlaysForCurrentImage()
         edCount.text = selection.size.toString(); syncHdChip()
     }
     private fun captionHint(index: Int): String =
