@@ -118,6 +118,13 @@ class AttachmentPanelView @JvmOverloads constructor(
      */
     private var editorWasOpened = false
 
+    /**
+     * Har selected image ka apna rotation (clockwise degrees: 0, 90, 180, 270).
+     * perImageCaptions jaisa hi parallel list — selection[i] ka rotation = perImageRotations[i].
+     * Sirf editor ke andar "Rotate" button se badalta hai.
+     */
+    private val perImageRotations = mutableListOf<Int>()
+
     private var imagesLoaded  = false
     private var imagesLoading = false
     private val ioExecutor = Executors.newSingleThreadExecutor()
@@ -289,7 +296,7 @@ class AttachmentPanelView @JvmOverloads constructor(
 
         edClose.setOnClickListener { closeEditor() }
         findViewById<TextView>(R.id.toolUndo).setOnClickListener    { toolPhase2("Undo") }
-        findViewById<TextView>(R.id.toolRotate).setOnClickListener  { toolPhase2("Rotate") }
+        findViewById<TextView>(R.id.toolRotate).setOnClickListener  { rotateCurrentEditorImage() }
         findViewById<TextView>(R.id.toolCrop).setOnClickListener    { toolPhase2("Crop") }
         findViewById<TextView>(R.id.toolSticker).setOnClickListener { toolPhase2("Stickers") }
         findViewById<TextView>(R.id.toolText).setOnClickListener    { toolPhase2("Text") }
@@ -636,10 +643,11 @@ class AttachmentPanelView @JvmOverloads constructor(
         if (idx >= 0) {
             selection.removeAt(idx)
             if (idx < perImageCaptions.size) perImageCaptions.removeAt(idx)
+            if (idx < perImageRotations.size) perImageRotations.removeAt(idx)
             added = false
         } else {
             if (selection.size >= maxSelection) { toast("Max $maxSelection photos"); return }
-            selection.add(img); perImageCaptions.add(""); added = true
+            selection.add(img); perImageCaptions.add(""); perImageRotations.add(0); added = true
         }
         imagesAdapter.updateSelection(selection.map { it.uri }); updateSelectionBar()
         if (added && currentState == State.COLLAPSED) goStateInternal(State.MIDDLE, null)
@@ -647,6 +655,7 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun clearSelection() {
         selection.clear()
         perImageCaptions.clear()
+        perImageRotations.clear()
         editorWasOpened = false          // fresh selection = no editor yet
         imagesAdapter.updateSelection(emptyList<Uri>()); updateSelectionBar()
     }
@@ -664,6 +673,31 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun syncCaptionSize() {
         while (perImageCaptions.size < selection.size) perImageCaptions.add("")
         while (perImageCaptions.size > selection.size) perImageCaptions.removeLastOrNull()
+        while (perImageRotations.size < selection.size) perImageRotations.add(0)
+        while (perImageRotations.size > selection.size) perImageRotations.removeLastOrNull()
+    }
+
+    // -------------------------------------------------------------------------
+    // Rotate (editor ke andar "Rotate" tool)
+    // -------------------------------------------------------------------------
+
+    /** Rotate button: current editor image ko 90° clockwise ghumao, animate karke, aur yaad rakho. */
+    private fun rotateCurrentEditorImage() {
+        if (!editorOpen) return
+        if (edIndex >= perImageRotations.size) return
+
+        val newRotation = (perImageRotations[edIndex] + 90) % 360
+        perImageRotations[edIndex] = newRotation
+
+        // Smooth animated rotate — target hamesha "current visual + 90",
+        // taaki baar-baar dabane par turant palat jaaye, atke nahi
+        edImage.animate()
+            .rotationBy(90f)
+            .setDuration(220)
+            .start()
+
+        // Editor strip ka thumbnail bhi apne hisaab se ghoomna chahiye
+        renderEditor()
     }
 
     // -------------------------------------------------------------------------
@@ -678,6 +712,12 @@ class AttachmentPanelView @JvmOverloads constructor(
     //       finalCaption = cap1 + CAP_SEP + cap2 + CAP_SEP + cap3  (separator se join)
     //       Viewer: har page apna caption
     //       Bubble: sab captions comma se
+    //
+    //   ROTATION: har image ka apna rotation hai (perImageRotations). 0 ho to
+    //   original Uri hi use hoti hai, warna ImageRotationUtil se rotated copy
+    //   banakar uska Uri bheja jaata hai. Ye bhejne se theek pehle hota hai,
+    //   taaki editor ke andar sirf preview rotate ho, asli file tabhi bane
+    //   jab user sach mein send kare.
     // -------------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
@@ -685,16 +725,34 @@ class AttachmentPanelView @JvmOverloads constructor(
         syncCaptionSize()
 
         val finalCaption: String = if (!editorWasOpened) {
-            // SOURCE 1: etCaption — ek caption sab images ke liye
             etCaption.text.toString().trim()
         } else {
-            // SOURCE 2: per-image captions — separator se join
-            // Blank entries bhi rakhte hain taaki har image ka index match rahe
             perImageCaptions.take(selection.size).joinToString(CAP_SEPARATOR)
         }
 
+        val hasAnyRotation = perImageRotations.any { it != 0 }
+        val selectionSnapshot = selection.toList()
+
+        if (!hasAnyRotation) {
+            // Koi rotation nahi — seedha purana behavior, koi extra kaam nahi
+            finishSend(selectionSnapshot.map { it.uri }, finalCaption)
+        } else {
+            // Rotation hai — background thread par rotated copies banao
+            // (bitmap decode/encode heavy hai, main thread par nahi karna)
+            val rotationsSnapshot = perImageRotations.toList()
+            ioExecutor.execute {
+                val rotatedUris = selectionSnapshot.mapIndexed { i, img ->
+                    val deg = rotationsSnapshot.getOrElse(i) { 0 }
+                    ImageRotationUtil.rotateAndSave(context, img.uri, deg)
+                }
+                mainHandler.post { finishSend(rotatedUris, finalCaption) }
+            }
+        }
+    }
+
+    private fun finishSend(uris: List<Uri>, caption: String) {
         hideKeyboardNow()
-        onImageSend?.invoke(selection.map { it.uri }, finalCaption)
+        onImageSend?.invoke(uris, caption)
         clearSelection(); closeEditor(); etCaption.setText(""); hidePanel()
     }
 
@@ -724,6 +782,8 @@ class AttachmentPanelView @JvmOverloads constructor(
             val cur = k == edIndex
             iv.setPadding(if (cur) dp(2f) else 0, if (cur) dp(2f) else 0, if (cur) dp(2f) else 0, if (cur) dp(2f) else 0)
             iv.setBackgroundColor(if (cur) 0xFF00A884.toInt() else 0x00000000); iv.alpha = if (cur) 1f else 0.55f
+            // Thumbnail ko bhi uske saved rotation ke hisaab se dikhao
+            iv.rotation = perImageRotations.getOrElse(k) { 0 }.toFloat()
             Glide.with(iv).load(img.uri).centerCrop().into(iv)
             iv.setOnClickListener {
                 saveCurrentEditorCaption()
@@ -735,6 +795,10 @@ class AttachmentPanelView @JvmOverloads constructor(
             edStrip.addView(iv)
         }
         Glide.with(edImage).load(selection[edIndex].uri).fitCenter().into(edImage)
+        // Naye image par switch karte waqt uska saved rotation turant apply karo
+        // (animate nahi — ye ek snap hai, 90° step animation sirf button dabane par)
+        edImage.animate().cancel()
+        edImage.rotation = perImageRotations.getOrElse(edIndex) { 0 }.toFloat()
         edCount.text = selection.size.toString(); syncHdChip()
     }
     private fun captionHint(index: Int): String =
