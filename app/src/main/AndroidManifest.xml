@@ -84,6 +84,21 @@
     android:name=".ImageViewerActivity"
     android:exported="false"
     android:theme="@style/Theme.SignalX" />
+
+        <!--
+          Rotate feature (ImageRotationUtil) rotated image ko cache folder mein save
+          karta hai aur isi provider se uska content:// Uri banata hai, taaki woh Uri
+          dusri activities (ChatActivity, ImageViewerActivity) ko diya ja sake.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
         
     </application>
 </manifest>
