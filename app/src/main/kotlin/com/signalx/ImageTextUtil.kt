@@ -8,7 +8,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
 import androidx.core.content.FileProvider
-import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import java.io.FileOutputStream
 
