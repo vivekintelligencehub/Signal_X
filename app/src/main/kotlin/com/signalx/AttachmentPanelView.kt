@@ -27,6 +27,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -180,6 +181,28 @@ class AttachmentPanelView @JvmOverloads constructor(
 
     private val parentLayoutListener =
         View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> trackWindowSize(v.width, v.height) }
+
+    // -------------------------------------------------------------------------
+    // Text tool — floating toolbar + drag-to-delete state
+    // -------------------------------------------------------------------------
+    /** Abhi jo text box select/edit ho raha hai uska EditText (null = koi nahi). */
+    private var activeTextView: EditText? = null
+    private var activeTextEntry: EditorTextEntry? = null
+
+    /** Floating toolbar jo active text ke upar/neeche aata hai: B / I / U / size / color-dots. */
+    private var textToolbar: LinearLayout? = null
+    private var textToolbarBold: TextView? = null
+    private var textToolbarItalic: TextView? = null
+    private var textToolbarUnderline: TextView? = null
+    private var textToolbarSizeBar: SeekBar? = null
+    private var textToolbarColorDots: View? = null
+
+    /** Niche se khulne wala rangeen palette (color-dots button dabane par). */
+    private var colorPalettePopup: LinearLayout? = null
+
+    /** Long-press-and-slide dustbin — sirf drag ke dauraan dikhta hai. */
+    private var dustbinView: TextView? = null
+    private var isDraggingToDelete = false
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_attachment_sheet, this, true)
@@ -703,40 +726,32 @@ class AttachmentPanelView @JvmOverloads constructor(
         val newRotation = (perImageRotations[edIndex] + 90) % 360
         perImageRotations[edIndex] = newRotation
 
-        // Smooth animated rotate — target hamesha "current visual + 90",
-        // taaki baar-baar dabane par turant palat jaaye, atke nahi
-        edImage.animate()
-            .rotationBy(90f)
-            .setDuration(220)
-            .start()
-
-        // Editor strip ka thumbnail bhi apne hisaab se ghoomna chahiye
+        edImage.animate().rotationBy(90f).setDuration(220).start()
         renderEditor()
     }
 
-    // -------------------------------------------------------------------------
+    // =========================================================================
     // Text tool (editor ke andar "T" tool)
     //
     // Har text box edOverlayContainer ke andar ek EditText hai:
     //   - tap karke seedha type kar sakte ho (focus + keyboard khulta hai)
-    //   - ek finger se drag karke move kar sakte ho
-    //   - upar-right corner mein ek chhota ✕ badge hai, usse delete hota hai
-    //   - tap karke color cycle bhi ho sakta hai (EditorTextEntry.TEXT_COLORS)
+    //   - focus hote hi ek FLOATING TOOLBAR text ke paas aata hai: B / I / U /
+    //     size-slider / color-dots-button
+    //   - color-dots button dabane par neeche se ek palette khulta hai
+    //   - LONG-PRESS karke drag karo to neeche-right ek dustbin aata hai;
+    //     ungli dustbin ke andar chhodo to text delete, bahar chhodo to bach jaata hai
     //
-    // Position hamesha edOverlayContainer ke fraction (0f..1f) mein save hoti hai,
-    // isliye jab image badi ho (actual bitmap), position proportionally sahi rehti hai.
-    // -------------------------------------------------------------------------
+    // Position hamesha edOverlayContainer ke fraction (0f..1f) mein save hoti hai.
+    // =========================================================================
 
     private fun addTextOverlay() {
         if (!editorOpen) return
         if (edIndex >= perImageTextEntries.size) return
 
-        // Naya text box hamesha center mein spawn hota hai
         val entry = EditorTextEntry(x = 0.5f, y = 0.5f, text = "")
         perImageTextEntries[edIndex].add(entry)
         renderTextOverlaysForCurrentImage()
 
-        // Naye box ko turant focus + keyboard do, taaki user seedha type kar sake
         val lastChild = edOverlayContainer.getChildAt(edOverlayContainer.childCount - 1)
         (lastChild as? EditText)?.let { et ->
             et.requestFocus()
@@ -744,24 +759,35 @@ class AttachmentPanelView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * edOverlayContainer ko khaali karke current editor image (edIndex) ke saare
-     * text entries ko dobara draggable EditText views ke roop mein render karta hai.
-     * Image switch hone par (renderEditor se) yahi call hoti hai.
-     */
     private fun renderTextOverlaysForCurrentImage() {
         edOverlayContainer.removeAllViews()
+        activeTextView = null; activeTextEntry = null
+        hideTextToolbar()
         if (edIndex >= perImageTextEntries.size) return
         val entries = perImageTextEntries[edIndex]
         entries.forEach { entry -> addDraggableTextView(entry) }
     }
 
+    /** Ek EditorTextEntry ke current style ke hisaab se uski EditText par visually apply karo. */
+    private fun applyEntryStyleToView(entry: EditorTextEntry, et: EditText) {
+        et.setTextColor(entry.resolvedColor())
+        et.textSize = entry.sizeSp
+        val style = when {
+            entry.isBold && entry.isItalic -> Typeface.BOLD_ITALIC
+            entry.isBold -> Typeface.BOLD
+            entry.isItalic -> Typeface.ITALIC
+            else -> Typeface.NORMAL
+        }
+        et.setTypeface(Typeface.DEFAULT, style)
+        et.paintFlags = if (entry.isUnderline)
+            et.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        else
+            et.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+    }
+
     private fun addDraggableTextView(entry: EditorTextEntry) {
         val et = EditText(context).apply {
             setText(entry.text)
-            setTextColor(EditorTextEntry.TEXT_COLORS.getOrElse(entry.colorIndex) { 0xFFFFFFFF.toInt() })
-            textSize = 20f
-            setTypeface(typeface, Typeface.BOLD)
             background = null
             isSingleLine = false
             setPadding(dp(4f), dp(4f), dp(4f), dp(4f))
@@ -770,12 +796,12 @@ class AttachmentPanelView @JvmOverloads constructor(
             hint = "Type..."
             setHintTextColor(0x80FFFFFF.toInt())
         }
+        applyEntryStyleToView(entry, et)
+
         val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         et.layoutParams = lp
         edOverlayContainer.addView(et)
 
-        // Position fraction ko pixel mein convert karna container ki size chahiye —
-        // container abhi measure nahi hua ho sakta, isliye post{} mein karte hain
         edOverlayContainer.post {
             val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
             if (cw > 0 && ch > 0) {
@@ -784,52 +810,342 @@ class AttachmentPanelView @JvmOverloads constructor(
             }
         }
 
-        // Text change ho to entry mein turant save karo (send ke waqt isi se padhte hain)
         et.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) { entry.text = s?.toString() ?: "" }
         })
 
-        // Color cycle: double-tap jaisa simple single-tap cycle (text ke andar cursor
-        // place karna bhi tap hi hota hai, isliye long-press ko color-cycle banate hain
-        // taaki normal typing-tap se conflict na ho)
-        et.setOnLongClickListener {
-            entry.colorIndex = (entry.colorIndex + 1) % EditorTextEntry.TEXT_COLORS.size
-            et.setTextColor(EditorTextEntry.TEXT_COLORS[entry.colorIndex])
-            true
+        // Focus milte hi iska apna floating toolbar dikhao; focus jaate hi hata do
+        et.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showTextToolbarFor(et, entry) else hideTextToolbarIfFor(et)
         }
 
-        // Drag to move — EditText apna click/focus bhi chahta hai, isliye hum
-        // drag ko tabhi "consume" karte hain jab finger sach mein hila ho (touchSlop se zyada)
+        // Drag-to-move (normal) + Long-press-and-slide-to-delete (dustbin)
         var dLastX = 0f; var dLastY = 0f; var dMoved = false
+        var longPressArmed = false
+        val longPressRunnable = Runnable {
+            longPressArmed = true
+            showDustbin()
+            et.alpha = 0.55f   // visual hint: ab drag-to-delete mode hai
+        }
+
         et.setOnTouchListener { v, ev ->
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    dLastX = ev.rawX; dLastY = ev.rawY; dMoved = false
+                    dLastX = ev.rawX; dLastY = ev.rawY; dMoved = false; longPressArmed = false
+                    v.postDelayed(longPressRunnable, LONG_PRESS_MS)
                     false   // DOWN ko EditText ko bhi jaane do (focus/cursor ke liye)
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = ev.rawX - dLastX; val dy = ev.rawY - dLastY
-                    if (!dMoved && (abs(dx) > touchSlop || abs(dy) > touchSlop)) dMoved = true
+                    if (!dMoved && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                        dMoved = true
+                        v.removeCallbacks(longPressRunnable)
+                    }
                     if (dMoved) {
                         v.x += dx; v.y += dy
                         dLastX = ev.rawX; dLastY = ev.rawY
-                        // Live position ko fraction mein wapas save karo
-                        val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
-                        if (cw > 0 && ch > 0) {
-                            entry.x = ((v.x + v.width / 2f) / cw).coerceIn(0f, 1f)
-                            entry.y = ((v.y + v.height / 2f) / ch).coerceIn(0f, 1f)
+
+                        if (longPressArmed) {
+                            // Drag-to-delete mode: dustbin ke upar ho to highlight karo
+                            isDraggingToDelete = true
+                            val overDustbin = isViewOverDustbin(v)
+                            dustbinView?.isSelected = overDustbin
+                            dustbinView?.scaleX = if (overDustbin) 1.25f else 1f
+                            dustbinView?.scaleY = if (overDustbin) 1.25f else 1f
+                        } else {
+                            // Normal move: position fraction mein save karo
+                            val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
+                            if (cw > 0 && ch > 0) {
+                                entry.x = ((v.x + v.width / 2f) / cw).coerceIn(0f, 1f)
+                                entry.y = ((v.y + v.height / 2f) / ch).coerceIn(0f, 1f)
+                            }
                         }
-                        true   // drag consume — EditText ka apna touch yahan nahi chahiye
+                        true
                     } else false
                 }
-                MotionEvent.ACTION_UP -> {
-                    if (dMoved) { dMoved = false; true } else false  // tap tha — EditText khud handle kare (focus)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.removeCallbacks(longPressRunnable)
+                    val wasLongPressArmed = longPressArmed
+                    val wasMoved = dMoved
+                    longPressArmed = false; dMoved = false
+
+                    if (isDraggingToDelete) {
+                        isDraggingToDelete = false
+                        val overDustbin = isViewOverDustbin(v)
+                        hideDustbin()
+                        v.alpha = 1f
+                        if (overDustbin) {
+                            deleteTextEntry(entry, et)
+                            true
+                        } else {
+                            // Position jahan chhoda wahin save karo, bach gaya
+                            val cw = edOverlayContainer.width; val ch = edOverlayContainer.height
+                            if (cw > 0 && ch > 0) {
+                                entry.x = ((v.x + v.width / 2f) / cw).coerceIn(0f, 1f)
+                                entry.y = ((v.y + v.height / 2f) / ch).coerceIn(0f, 1f)
+                            }
+                            true
+                        }
+                    } else if (wasMoved) {
+                        true   // normal drag khatam — EditText ka apna touch yahan nahi chahiye
+                    } else {
+                        false  // plain tap tha — EditText khud handle kare (focus/cursor)
+                    }
                 }
                 else -> false
             }
         }
+    }
+
+    private fun deleteTextEntry(entry: EditorTextEntry, et: EditText) {
+        if (edIndex < perImageTextEntries.size) perImageTextEntries[edIndex].remove(entry)
+        edOverlayContainer.removeView(et)
+        if (activeTextView === et) { activeTextView = null; activeTextEntry = null; hideTextToolbar() }
+    }
+
+    private fun isViewOverDustbin(textView: View): Boolean {
+        val bin = dustbinView ?: return false
+        val binLoc = IntArray(2); bin.getLocationOnScreen(binLoc)
+        val txtLoc = IntArray(2); textView.getLocationOnScreen(txtLoc)
+        val txtCenterX = txtLoc[0] + textView.width / 2
+        val txtCenterY = txtLoc[1] + textView.height / 2
+        val binCenterX = binLoc[0] + bin.width / 2
+        val binCenterY = binLoc[1] + bin.height / 2
+        val hitRadius = dp(40f)
+        return abs(txtCenterX - binCenterX) < hitRadius && abs(txtCenterY - binCenterY) < hitRadius
+    }
+
+    // ---------------------------------------------------------------------
+    // Dustbin (sirf long-press-drag ke dauraan dikhta hai, bottom-right)
+    // ---------------------------------------------------------------------
+    private fun showDustbin() {
+        if (dustbinView != null) { dustbinView?.visibility = VISIBLE; return }
+        val bin = TextView(context).apply {
+            text = "\uD83D\uDDD1"   // 🗑
+            textSize = 24f
+            gravity = Gravity.CENTER
+            setBackgroundColor(0xCC000000.toInt())
+        }
+        val size = dp(56f)
+        val lp = FrameLayout.LayoutParams(size, size).apply {
+            gravity = Gravity.BOTTOM or Gravity.END
+            marginEnd = dp(20f); bottomMargin = dp(20f)
+        }
+        bin.layoutParams = lp
+        // GradientDrawable round background (dp() ke baad set karte hain taaki radius sahi ho)
+        bin.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(0xCC000000.toInt())
+        }
+        editorOverlay.addView(bin)
+        dustbinView = bin
+    }
+    private fun hideDustbin() {
+        dustbinView?.let { editorOverlay.removeView(it) }
+        dustbinView = null
+    }
+
+    // ---------------------------------------------------------------------
+    // Floating toolbar: B / I / U / size-slider / color-dots-button
+    // Active text ke upar ya neeche (jo bhi screen mein fit ho) aata hai
+    // ---------------------------------------------------------------------
+    private fun showTextToolbarFor(et: EditText, entry: EditorTextEntry) {
+        activeTextView = et; activeTextEntry = entry
+        ensureTextToolbarCreated()
+        syncToolbarButtonsFromEntry(entry)
+        positionToolbarNear(et)
+        textToolbar?.visibility = VISIBLE
+    }
+    private fun hideTextToolbarIfFor(et: EditText) {
+        if (activeTextView === et) {
+            // Thoda delay — agar user ne toolbar ke kisi button ko tap kiya hai to
+            // focus-loss turant aata hai, usse pehle button ka onClick chalna chahiye.
+            postDelayed({ if (activeTextView === et) hideTextToolbar() }, 150)
+        }
+    }
+    private fun hideTextToolbar() {
+        textToolbar?.visibility = GONE
+        colorPalettePopup?.let { editorOverlay.removeView(it) }
+        colorPalettePopup = null
+        activeTextView = null; activeTextEntry = null
+    }
+
+    private fun ensureTextToolbarCreated() {
+        if (textToolbar != null) return
+
+        val bar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(10f), dp(6f), dp(10f), dp(6f))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(22f).toFloat()
+                setColor(0xFF222B32.toInt())
+            }
+        }
+        val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        bar.layoutParams = lp
+
+        fun styleBtn(label: String): TextView = TextView(context).apply {
+            text = label; textSize = 15f; setTextColor(0xFFFFFFFF.toInt())
+            gravity = Gravity.CENTER
+            val s = dp(34f)
+            layoutParams = LinearLayout.LayoutParams(s, s)
+            isClickable = true; isFocusable = true
+        }
+
+        val bBold = styleBtn("B").apply { setTypeface(typeface, Typeface.BOLD) }
+        val bItalic = styleBtn("I").apply { setTypeface(typeface, Typeface.ITALIC) }
+        val bUnderline = styleBtn("U").apply { paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG }
+
+        val sizeBar = SeekBar(context).apply {
+            max = (EditorTextEntry.MAX_SIZE_SP - EditorTextEntry.MIN_SIZE_SP).toInt()
+            layoutParams = LinearLayout.LayoutParams(dp(90f), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                marginStart = dp(6f); marginEnd = dp(6f)
+            }
+        }
+
+        val colorDots = View(context).apply {
+            val s = dp(28f)
+            layoutParams = LinearLayout.LayoutParams(s, s).apply { marginStart = dp(4f) }
+            background = buildColorDotsDrawable()
+            isClickable = true; isFocusable = true
+        }
+
+        bBold.setOnClickListener {
+            val e = activeTextEntry ?: return@setOnClickListener
+            e.isBold = !e.isBold
+            activeTextView?.let { applyEntryStyleToView(e, it) }
+            syncToolbarButtonsFromEntry(e)
+        }
+        bItalic.setOnClickListener {
+            val e = activeTextEntry ?: return@setOnClickListener
+            e.isItalic = !e.isItalic
+            activeTextView?.let { applyEntryStyleToView(e, it) }
+            syncToolbarButtonsFromEntry(e)
+        }
+        bUnderline.setOnClickListener {
+            val e = activeTextEntry ?: return@setOnClickListener
+            e.isUnderline = !e.isUnderline
+            activeTextView?.let { applyEntryStyleToView(e, it) }
+            syncToolbarButtonsFromEntry(e)
+        }
+        sizeBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                val e = activeTextEntry ?: return
+                e.sizeSp = EditorTextEntry.MIN_SIZE_SP + progress
+                activeTextView?.let { applyEntryStyleToView(e, it) }
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                activeTextView?.let { positionToolbarNear(it) }  // size badla to toolbar reposition
+            }
+        })
+        colorDots.setOnClickListener { toggleColorPalette() }
+
+        bar.addView(bBold); bar.addView(bItalic); bar.addView(bUnderline)
+        bar.addView(sizeBar); bar.addView(colorDots)
+
+        editorOverlay.addView(bar)
+        textToolbar = bar
+        textToolbarBold = bBold; textToolbarItalic = bItalic; textToolbarUnderline = bUnderline
+        textToolbarSizeBar = sizeBar; textToolbarColorDots = colorDots
+    }
+
+    private fun syncToolbarButtonsFromEntry(entry: EditorTextEntry) {
+        textToolbarBold?.setBackgroundColor(if (entry.isBold) 0x55FFFFFF.toInt() else 0x00000000)
+        textToolbarItalic?.setBackgroundColor(if (entry.isItalic) 0x55FFFFFF.toInt() else 0x00000000)
+        textToolbarUnderline?.setBackgroundColor(if (entry.isUnderline) 0x55FFFFFF.toInt() else 0x00000000)
+        textToolbarSizeBar?.progress = (entry.sizeSp - EditorTextEntry.MIN_SIZE_SP).toInt().coerceIn(0, textToolbarSizeBar?.max ?: 0)
+    }
+
+    /** Toolbar ko active EditText ke upar rakhta hai; jagah na ho to neeche. */
+    private fun positionToolbarNear(et: EditText) {
+        val bar = textToolbar ?: return
+        bar.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val barW = bar.measuredWidth; val barH = bar.measuredHeight
+
+        val etLoc = IntArray(2); et.getLocationInWindow(etLoc)
+        val overlayLoc = IntArray(2); editorOverlay.getLocationInWindow(overlayLoc)
+        val etTopInOverlay = etLoc[1] - overlayLoc[1]
+        val etLeftInOverlay = etLoc[0] - overlayLoc[0]
+
+        var top = etTopInOverlay - barH - dp(8f)
+        if (top < 0) top = etTopInOverlay + et.height + dp(8f)   // upar jagah nahi — neeche rakho
+
+        var left = etLeftInOverlay + (et.width / 2) - (barW / 2)
+        left = left.coerceIn(dp(4f), (editorOverlay.width - barW - dp(4f)).coerceAtLeast(dp(4f)))
+
+        (bar.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+            lp.leftMargin = left; lp.topMargin = top.coerceAtLeast(0)
+            bar.layoutParams = lp
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Color palette (color-dots button dabane par neeche se khulta hai)
+    // ---------------------------------------------------------------------
+    private fun buildColorDotsDrawable(): GradientDrawable =
+        GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(0xFFFFFFFF.toInt())
+            // Simple multi-color look: ek white circle par thoda border —
+            // asli "rangeen dots" visual palette khulne par hi dikhta hai
+            setStroke(dp(2f), 0xFF888888.toInt())
+        }
+
+    private fun toggleColorPalette() {
+        if (colorPalettePopup != null) { closeColorPalette(); return }
+        val entry = activeTextEntry ?: return
+
+        val palette = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14f), dp(14f), dp(14f), dp(14f))
+            background = GradientDrawable().apply {
+                topLeftRadius = dp(16f).toFloat(); topRightRadius = dp(16f).toFloat()
+                setColor(0xFF1A2229.toInt())
+            }
+        }
+        val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.BOTTOM
+        }
+        palette.layoutParams = lp
+
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        EditorTextEntry.TEXT_COLORS.forEachIndexed { idx, color ->
+            val dot = View(context).apply {
+                val s = dp(36f)
+                layoutParams = LinearLayout.LayoutParams(s, s).apply {
+                    marginStart = dp(6f); marginEnd = dp(6f)
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(color)
+                    setStroke(dp(2f), 0xFFFFFFFF.toInt())
+                }
+                setOnClickListener {
+                    entry.colorIndex = idx; entry.customColor = null
+                    activeTextView?.let { applyEntryStyleToView(entry, it) }
+                }
+            }
+            row.addView(dot)
+        }
+        palette.addView(row)
+
+        editorOverlay.addView(palette)
+        colorPalettePopup = palette
+    }
+    private fun closeColorPalette() {
+        colorPalettePopup?.let { editorOverlay.removeView(it) }
+        colorPalettePopup = null
     }
 
     // -------------------------------------------------------------------------
@@ -845,15 +1161,9 @@ class AttachmentPanelView @JvmOverloads constructor(
     //       Viewer: har page apna caption
     //       Bubble: sab captions comma se
     //
-    //   ROTATION: har image ka apna rotation hai (perImageRotations). 0 ho to
-    //   original Uri hi use hoti hai, warna ImageRotationUtil se rotated copy
-    //   banakar uska Uri bheja jaata hai.
-    //
-    //   TEXT: har image ke apne text overlays hain (perImageTextEntries). Koi
-    //   entry na ho ya sab blank hon to original/rotated Uri hi use hoti hai,
-    //   warna ImageTextUtil se text burn karke nayi copy banti hai. Rotation
-    //   PEHLE apply hota hai, phir usi (rotated) image par text burn hota hai—
-    //   taaki text hamesha sahi orientation mein, user ne jahan rakha wahin dikhe.
+    //   ROTATION + TEXT: pehle rotation apply hota hai, phir usi (rotated) image
+    //   par text burn hota hai — taaki text hamesha sahi orientation mein,
+    //   user ne jahan rakha wahin dikhe.
     // -------------------------------------------------------------------------
     private fun sendSelection() {
         if (selection.isEmpty()) return
@@ -871,11 +1181,8 @@ class AttachmentPanelView @JvmOverloads constructor(
         val selectionSnapshot = selection.toList()
 
         if (!hasAnyRotation && !hasAnyText) {
-            // Koi edit nahi — seedha purana behavior, koi extra kaam nahi
             finishSend(selectionSnapshot.map { it.uri }, finalCaption)
         } else {
-            // Rotation ya text hai — background thread par processed copies banao
-            // (bitmap decode/encode heavy hai, main thread par nahi karna)
             val rotationsSnapshot = perImageRotations.toList()
             val textsSnapshot = perImageTextEntries.map { it.toList() }
             ioExecutor.execute {
@@ -902,9 +1209,6 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun openEditor() {
         if (selection.isEmpty()) return
         syncCaptionSize()
-        // SOURCE 2 activate: editor khula — ab etCaption ignore hoga
-        // NO pre-fill: editor apne captions khud se start karta hai
-        // (agar user ne pehle editor mein kuch likha tha to woh preserve hota hai)
         editorWasOpened = true
         editorOpen = true; edIndex = 0
         edCaption.setText(perImageCaptions.getOrElse(0) { "" })
@@ -922,7 +1226,6 @@ class AttachmentPanelView @JvmOverloads constructor(
             val cur = k == edIndex
             iv.setPadding(if (cur) dp(2f) else 0, if (cur) dp(2f) else 0, if (cur) dp(2f) else 0, if (cur) dp(2f) else 0)
             iv.setBackgroundColor(if (cur) 0xFF00A884.toInt() else 0x00000000); iv.alpha = if (cur) 1f else 0.55f
-            // Thumbnail ko bhi uske saved rotation ke hisaab se dikhao
             iv.rotation = perImageRotations.getOrElse(k) { 0 }.toFloat()
             Glide.with(iv).load(img.uri).centerCrop().into(iv)
             iv.setOnClickListener {
@@ -935,11 +1238,8 @@ class AttachmentPanelView @JvmOverloads constructor(
             edStrip.addView(iv)
         }
         Glide.with(edImage).load(selection[edIndex].uri).fitCenter().into(edImage)
-        // Naye image par switch karte waqt uska saved rotation turant apply karo
-        // (animate nahi — ye ek snap hai, 90° step animation sirf button dabane par)
         edImage.animate().cancel()
         edImage.rotation = perImageRotations.getOrElse(edIndex) { 0 }.toFloat()
-        // Is image ke apne text overlays dikhao
         renderTextOverlaysForCurrentImage()
         edCount.text = selection.size.toString(); syncHdChip()
     }
@@ -948,6 +1248,7 @@ class AttachmentPanelView @JvmOverloads constructor(
     private fun closeEditor() {
         if (!editorOpen) return
         saveCurrentEditorCaption(); editorOpen = false
+        hideTextToolbar(); hideDustbin()
         editorOverlay.animate().alpha(0f).setDuration(140).withEndAction {
             editorOverlay.visibility = GONE; editorOverlay.alpha = 1f
         }.start()
@@ -1084,6 +1385,7 @@ class AttachmentPanelView @JvmOverloads constructor(
         private const val KEY_KB_PX    = "kb_px"
         private const val PENDING_OPEN_TIMEOUT_MS = 650L
         private const val DEBUG_OVERLAY = false
+        private const val LONG_PRESS_MS = 350L
         /** SOURCE-2 captions ke beech separator — user kabhi type nahi kar sakta. */
         const val CAP_SEPARATOR = "\u001E"
     }
